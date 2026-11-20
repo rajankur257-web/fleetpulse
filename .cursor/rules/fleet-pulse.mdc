@@ -1,0 +1,10 @@
+---
+description: Fleet Pulse universal AI context and project rules
+globs: *
+alwaysApply: true
+---
+
+# Fleet Pulse Context
+
+Please refer to the single source of truth:
+@AGENTS.md
