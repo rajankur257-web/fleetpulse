@@ -112,7 +112,12 @@ export class EventsGateway
       this.logger.warn(`Driver ${data.driverId} disconnected from socket ${socket.id}`);
       this.driverLastBroadcastTime.delete(data.driverId);
       // Treat unexpected disconnect during an offer as a reject and cascade
-      await this.offerCascadeService.handleDriverDisconnect(data.driverId);
+      try {
+        await this.offerCascadeService.handleDriverDisconnect(data.driverId);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Error in driver disconnect handler (${data.driverId}): ${msg}`);
+      }
     }
   }
 
@@ -121,6 +126,8 @@ export class EventsGateway
    * Throttled to at most once per second per driver.
    */
   broadcastDriverLocation(event: DriverLocationEvent): boolean {
+    if (!this.server) return false;
+
     const now = Date.now();
     const lastBroadcast = this.driverLastBroadcastTime.get(event.driverId) || 0;
 
@@ -138,6 +145,7 @@ export class EventsGateway
    * Broadcasts driver status change to 'dispatchers' room.
    */
   broadcastDriverStatus(event: DriverStatusEvent): void {
+    if (!this.server) return;
     this.server.to('dispatchers').emit('driver:status', event);
   }
 
@@ -145,6 +153,7 @@ export class EventsGateway
    * Broadcasts newly created delivery request to 'dispatchers' room.
    */
   broadcastRequestCreated(event: RequestCreatedEvent): void {
+    if (!this.server) return;
     this.server.to('dispatchers').emit('request:created', event);
   }
 
@@ -152,6 +161,7 @@ export class EventsGateway
    * Emits an offer to the specific driver's private room and notifies dispatchers.
    */
   emitRequestOffered(driverId: string, event: RequestOfferedEvent): void {
+    if (!this.server) return;
     const driverRoom = `driver:${driverId}`;
     this.server.to(driverRoom).emit('request:offered', event);
     this.server.to('dispatchers').emit('request:offered', event);
@@ -161,6 +171,7 @@ export class EventsGateway
    * Broadcasts that a request was successfully assigned.
    */
   broadcastRequestAssigned(event: RequestAssignedEvent): void {
+    if (!this.server) return;
     const driverRoom = `driver:${event.driverId}`;
     this.server.to(driverRoom).emit('request:assigned', event);
     this.server.to('dispatchers').emit('request:assigned', event);
@@ -170,6 +181,7 @@ export class EventsGateway
    * Broadcasts that a request expired after all cascade attempts failed.
    */
   broadcastRequestExpired(event: RequestExpiredEvent): void {
+    if (!this.server) return;
     this.server.to('dispatchers').emit('request:expired', event);
   }
 
@@ -177,6 +189,7 @@ export class EventsGateway
    * Emits cancellation to a driver's room.
    */
   emitRequestCancelled(driverId: string, event: RequestCancelledEvent): void {
+    if (!this.server) return;
     const driverRoom = `driver:${driverId}`;
     this.server.to(driverRoom).emit('request:cancelled', event);
     this.server.to('dispatchers').emit('request:cancelled', event);

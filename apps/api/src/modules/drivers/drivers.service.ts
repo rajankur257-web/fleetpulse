@@ -190,20 +190,23 @@ export class DriversService implements OnModuleInit, OnModuleDestroy {
     const entries = Array.from(this.locationBuffer.entries());
     this.locationBuffer.clear();
 
-    const updates = entries.map(([id, coords]) =>
-      this.prisma.driver.update({
-        where: { id },
-        data: {
-          lat: coords.lat,
-          lng: coords.lng,
-          lastLocationAt: coords.lastLocationAt,
-        },
-      }),
-    );
+    // Sort entries deterministically by driver ID to prevent transaction row-lock deadlocks
+    entries.sort(([idA], [idB]) => idA.localeCompare(idB));
 
     try {
-      await this.prisma.$transaction(updates);
-      return updates.length;
+      await Promise.all(
+        entries.map(([id, coords]) =>
+          this.prisma.driver.update({
+            where: { id },
+            data: {
+              lat: coords.lat,
+              lng: coords.lng,
+              lastLocationAt: coords.lastLocationAt,
+            },
+          }),
+        ),
+      );
+      return entries.length;
     } catch (err: unknown) {
       const error = err as Error;
       this.logger.error(`Failed to flush location updates: ${error.message}`);

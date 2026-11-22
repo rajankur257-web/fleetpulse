@@ -58,6 +58,9 @@ describe('OfferCascadeService (Unit)', () => {
           redisSets.get(key)!.add(member);
           return 1;
         }),
+        srem: jest.fn().mockImplementation(async (key: string, member: string) => {
+          return redisSets.get(key)?.delete(member) ? 1 : 0;
+        }),
         smembers: jest.fn().mockImplementation(async (key: string) => {
           return Array.from(redisSets.get(key) || []);
         }),

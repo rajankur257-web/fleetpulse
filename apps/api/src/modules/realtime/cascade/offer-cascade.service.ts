@@ -113,15 +113,22 @@ export class OfferCascadeService implements OnModuleInit, OnModuleDestroy {
       return false;
     }
 
-    // 2. Fetch rejected driver IDs for this request
+    // 2. Fetch rejected driver IDs for this request and drivers with pending offers
     const rejectedKey = `offer:rejected:${requestId}`;
-    const rejectedDrivers = await redisClient.smembers(rejectedKey);
+    const [rejectedDrivers, pendingOfferDrivers] = await Promise.all([
+      redisClient.smembers(rejectedKey),
+      redisClient.smembers('drivers:pending_offers'),
+    ]);
+
+    const excludedDriverIds = Array.from(
+      new Set([...rejectedDrivers, ...pendingOfferDrivers]),
+    );
 
     // 3. Find candidate drivers
     const availableDrivers = await this.prisma.driver.findMany({
       where: {
         status: DriverStatus.AVAILABLE,
-        id: { notIn: rejectedDrivers },
+        ...(excludedDriverIds.length > 0 ? { id: { notIn: excludedDriverIds } } : {}),
       },
     });
 
@@ -166,13 +173,14 @@ export class OfferCascadeService implements OnModuleInit, OnModuleDestroy {
       expiresAt,
     };
 
-    // 5. Store active offer state in Redis
+    // 5. Store active offer state in Redis and mark driver as having a pending offer
     const activeKey = `offer:active:${requestId}`;
     const driverActiveKey = `driver:active_offer:${bestDriver.id}`;
     const ttlSeconds = this.offerTimeoutSeconds + 60;
 
     await redisClient.set(activeKey, JSON.stringify(offerPayload), 'EX', ttlSeconds);
     await redisClient.set(driverActiveKey, requestId, 'EX', ttlSeconds);
+    await redisClient.sadd('drivers:pending_offers', bestDriver.id);
 
     // 6. Schedule BullMQ delayed timeout job
     const jobId = `offer:${requestId}:${attempt}`;
@@ -208,6 +216,10 @@ export class OfferCascadeService implements OnModuleInit, OnModuleDestroy {
       attempt,
       timeoutSeconds: this.offerTimeoutSeconds,
       expiresAt,
+      pickupLat: request.pickupLat,
+      pickupLng: request.pickupLng,
+      dropLat: request.dropLat,
+      dropLng: request.dropLng,
     });
 
     this.logger.log(
@@ -287,6 +299,7 @@ export class OfferCascadeService implements OnModuleInit, OnModuleDestroy {
     });
 
     // 5. Clean up Redis keys
+    await redisClient.srem('drivers:pending_offers', driverId);
     await redisClient.del(activeKey);
     await redisClient.del(`driver:active_offer:${driverId}`);
     await redisClient.del(`offer:rejected:${requestId}`);
@@ -328,6 +341,7 @@ export class OfferCascadeService implements OnModuleInit, OnModuleDestroy {
     }
 
     // Clean up active keys for this driver
+    await redisClient.srem('drivers:pending_offers', driverId);
     await redisClient.del(activeKey);
     await redisClient.del(`driver:active_offer:${driverId}`);
 
@@ -369,6 +383,7 @@ export class OfferCascadeService implements OnModuleInit, OnModuleDestroy {
    */
   async handleDriverDisconnect(driverId: string): Promise<void> {
     const redisClient = this.redis.getClient();
+    await redisClient.srem('drivers:pending_offers', driverId);
     const driverActiveKey = `driver:active_offer:${driverId}`;
     const activeRequestId = await redisClient.get(driverActiveKey);
 
@@ -400,7 +415,20 @@ export class OfferCascadeService implements OnModuleInit, OnModuleDestroy {
     });
 
     const redisClient = this.redis.getClient();
-    await redisClient.del(`offer:active:${requestId}`);
+    const activeKey = `offer:active:${requestId}`;
+    const activeRaw = await redisClient.get(activeKey);
+    if (activeRaw) {
+      try {
+        const payload = JSON.parse(activeRaw) as ActiveOfferPayload;
+        if (payload?.driverId) {
+          await redisClient.srem('drivers:pending_offers', payload.driverId);
+          await redisClient.del(`driver:active_offer:${payload.driverId}`);
+        }
+      } catch {
+        // ignore parse error
+      }
+    }
+    await redisClient.del(activeKey);
     await redisClient.del(`offer:rejected:${requestId}`);
 
     this.eventsGateway.broadcastRequestExpired({

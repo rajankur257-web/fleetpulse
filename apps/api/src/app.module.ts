@@ -7,6 +7,7 @@ import { HealthModule } from './modules/health/health.module';
 import { RequestsModule } from './modules/requests/requests.module';
 import { DispatchModule } from './modules/dispatch/dispatch.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
+import { SimulatorModule } from './modules/simulator/simulator.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 
@@ -39,6 +40,7 @@ import { RedisModule } from './redis/redis.module';
     RequestsModule,
     DispatchModule,
     RealtimeModule,
+    SimulatorModule,
   ],
   controllers: [],
   providers: [],

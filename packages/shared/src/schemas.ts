@@ -174,6 +174,10 @@ export const RequestOfferedEventSchema = z.object({
   attempt: z.number().int().min(1),
   expiresAt: z.string().or(z.date()),
   timeoutSeconds: z.number().positive().default(20),
+  pickupLat: z.number().optional(),
+  pickupLng: z.number().optional(),
+  dropLat: z.number().optional(),
+  dropLng: z.number().optional(),
 });
 
 export const RequestAssignedEventSchema = z.object({
