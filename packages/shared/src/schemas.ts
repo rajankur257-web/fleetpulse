@@ -243,6 +243,7 @@ export type UpdateDriverStatusDto = z.infer<typeof UpdateDriverStatusSchema>;
 export type NearbyDriversQueryDto = z.infer<typeof NearbyDriversQuerySchema>;
 export type DriverLocationEvent = z.infer<typeof DriverLocationEventSchema>;
 export type DriverStatusEvent = z.infer<typeof DriverStatusEventSchema>;
+export type RequestCreatedEvent = z.infer<typeof RequestCreatedEventSchema>;
 export type RequestOfferedEvent = z.infer<typeof RequestOfferedEventSchema>;
 export type RequestAssignedEvent = z.infer<typeof RequestAssignedEventSchema>;
 export type RequestExpiredEvent = z.infer<typeof RequestExpiredEventSchema>;

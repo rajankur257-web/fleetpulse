@@ -1,16 +1,26 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
+  Optional,
+  forwardRef,
 } from '@nestjs/common';
 import { DeliveryRequest, RequestStatus } from '@prisma/client';
+import { DeliveryRequest as SharedDeliveryRequest } from '@fleet-pulse/shared';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EventsGateway } from '../realtime/events.gateway';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 
 @Injectable()
 export class RequestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(forwardRef(() => EventsGateway))
+    private readonly eventsGateway?: EventsGateway,
+  ) {}
 
   async create(dto: CreateRequestDto): Promise<DeliveryRequest> {
     const request = await this.prisma.deliveryRequest.create({
@@ -36,6 +46,12 @@ export class RequestsService {
         },
       },
     });
+
+    if (this.eventsGateway) {
+      this.eventsGateway.broadcastRequestCreated({
+        request: request as unknown as SharedDeliveryRequest,
+      });
+    }
 
     return request;
   }

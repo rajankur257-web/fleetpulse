@@ -1,14 +1,18 @@
 import {
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
   OnModuleDestroy,
   OnModuleInit,
+  Optional,
+  forwardRef,
 } from '@nestjs/common';
 import { Driver, DriverStatus } from '@prisma/client';
-import { haversineKm } from '@fleet-pulse/shared';
+import { DriverStatus as SharedDriverStatus, haversineKm } from '@fleet-pulse/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
+import { EventsGateway } from '../realtime/events.gateway';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { QueryDriversDto } from './dto/query-drivers.dto';
 import { UpdateDriverLocationDto } from './dto/update-driver-location.dto';
@@ -37,6 +41,9 @@ export class DriversService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    @Optional()
+    @Inject(forwardRef(() => EventsGateway))
+    private readonly eventsGateway?: EventsGateway,
   ) {}
 
   onModuleInit() {
@@ -120,6 +127,14 @@ export class DriversService implements OnModuleInit, OnModuleDestroy {
       data: { status },
     });
 
+    if (this.eventsGateway) {
+      this.eventsGateway.broadcastDriverStatus({
+        driverId: id,
+        status: status as unknown as SharedDriverStatus,
+        activeRequestId: updated.activeRequestId,
+      });
+    }
+
     return updated;
   }
 
@@ -137,11 +152,24 @@ export class DriversService implements OnModuleInit, OnModuleDestroy {
     await this.redis.geoAdd('drivers:geo', lng, lat, id);
 
     // 2. Buffer write for PostgreSQL batch persistence
+    const now = new Date();
     this.locationBuffer.set(id, {
       lat,
       lng,
-      lastLocationAt: new Date(),
+      lastLocationAt: now,
     });
+
+    // 3. Broadcast location to dispatchers room via Socket.IO (throttled at 1/sec/driver)
+    if (this.eventsGateway) {
+      this.eventsGateway.broadcastDriverLocation({
+        driverId: id,
+        lat,
+        lng,
+        heading: dto.heading,
+        speed: dto.speed,
+        updatedAt: now.toISOString(),
+      });
+    }
 
     return {
       status: 'acknowledged',
