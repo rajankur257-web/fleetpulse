@@ -182,20 +182,34 @@ export class SimulatorService implements OnModuleDestroy {
     };
 
     // 2. Start simulation movement loop (every 1 second)
+    let stepping = false;
     this.simIntervalTimer = setInterval(() => {
-      this.stepMovement(1);
+      if (!this.running || stepping) return;
+      stepping = true;
+      try {
+        this.stepMovement(1);
+      } finally {
+        stepping = false;
+      }
     }, 1000);
 
-    // 3. Start delivery request generator loop
+    // 3. Start delivery request generator loop with concurrency backpressure
     if (this.config.requestRatePerMinute > 0) {
       const intervalMs = Math.max(
         100,
         Math.round(60000 / (this.config.requestRatePerMinute * this.config.speedMultiplier)),
       );
+      let inFlight = 0;
       this.requestIntervalTimer = setInterval(() => {
-        this.stepRequestGeneration().catch((err) => {
-          this.logger.error(`Error in request generation step: ${err.message}`);
-        });
+        if (!this.running || inFlight >= 2) return;
+        inFlight++;
+        this.stepRequestGeneration()
+          .catch((err) => {
+            this.logger.error(`Error in request generation step: ${err.message}`);
+          })
+          .finally(() => {
+            inFlight--;
+          });
       }, intervalMs);
     }
 
@@ -539,13 +553,15 @@ export class SimulatorService implements OnModuleDestroy {
 
     const redisClient = this.redis.getClient();
     await redisClient.del('drivers:pending_offers');
-    for (const d of selectedDrivers) {
-      await redisClient.del(`driver:active_offer:${d.id}`);
-      await this.driversService.updateLocation(d.id, {
-        lat: d.lat,
-        lng: d.lng,
-      });
-    }
+    await Promise.all(
+      selectedDrivers.map(async (d) => {
+        await redisClient.del(`driver:active_offer:${d.id}`);
+        await this.driversService.updateLocation(d.id, {
+          lat: d.lat,
+          lng: d.lng,
+        });
+      }),
+    );
 
     const jwtSecret =
       this.configService.get<string>('JWT_SECRET') ||
@@ -638,6 +654,32 @@ export class SimulatorService implements OnModuleDestroy {
       this.driverAgents.push(agent);
     }
 
-    this.logger.log(`Initialized ${this.driverAgents.length} simulated driver agents.`);
+    // Wait for driver sockets to establish connection and join rooms
+    const connectPromises = this.driverAgents
+      .filter((a) => a.socket)
+      .map(
+        (a) =>
+          new Promise<void>((resolve) => {
+            if (a.socket?.connected) {
+              resolve();
+              return;
+            }
+            const timeout = setTimeout(() => resolve(), 5000);
+            a.socket?.once('connect', () => {
+              clearTimeout(timeout);
+              resolve();
+            });
+            a.socket?.once('connect_error', () => {
+              clearTimeout(timeout);
+              resolve();
+            });
+          }),
+      );
+
+    await Promise.all(connectPromises);
+
+    this.logger.log(
+      `Initialized ${this.driverAgents.length} simulated driver agents (all connected).`,
+    );
   }
 }

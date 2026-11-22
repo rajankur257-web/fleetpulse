@@ -194,18 +194,22 @@ export class DriversService implements OnModuleInit, OnModuleDestroy {
     entries.sort(([idA], [idB]) => idA.localeCompare(idB));
 
     try {
-      await Promise.all(
-        entries.map(([id, coords]) =>
-          this.prisma.driver.update({
-            where: { id },
-            data: {
-              lat: coords.lat,
-              lng: coords.lng,
-              lastLocationAt: coords.lastLocationAt,
-            },
-          }),
-        ),
-      );
+      const CHUNK_SIZE = 10;
+      for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+        const chunk = entries.slice(i, i + CHUNK_SIZE);
+        await Promise.all(
+          chunk.map(([id, coords]) =>
+            this.prisma.driver.update({
+              where: { id },
+              data: {
+                lat: coords.lat,
+                lng: coords.lng,
+                lastLocationAt: coords.lastLocationAt,
+              },
+            }),
+          ),
+        );
+      }
       return entries.length;
     } catch (err: unknown) {
       const error = err as Error;
