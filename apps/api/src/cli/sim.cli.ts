@@ -81,7 +81,7 @@ async function bootstrap() {
     await new Promise((resolve) => setTimeout(resolve, 3000));
     try {
       await nestApp.close();
-    } catch (_closeErr) {
+    } catch {
       // Suppress graceful shutdown cleanup warnings
     }
 
