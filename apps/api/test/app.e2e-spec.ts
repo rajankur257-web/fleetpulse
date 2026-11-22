@@ -272,4 +272,96 @@ describe('Fleet Pulse API (e2e)', () => {
         .expect(400);
     });
   });
+
+  // --------------------------------------------------------------------------
+  // 4. Dispatch Endpoints (M4)
+  // --------------------------------------------------------------------------
+  describe('Dispatch Module', () => {
+    let dispatchRequestId: string;
+
+    beforeAll(async () => {
+      // Create a fresh pending request for dispatch testing
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/requests')
+        .send({
+          pickupLat: 12.9716,
+          pickupLng: 77.5946,
+          dropLat: 12.9352,
+          dropLng: 77.6245,
+          priority: 2,
+        })
+        .expect(201);
+      dispatchRequestId = res.body.id;
+    });
+
+    it('GET /api/v1/dispatch/strategies returns active and available strategies', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/dispatch/strategies')
+        .expect(200);
+
+      expect(res.body.activeStrategy).toBeDefined();
+      expect(Array.isArray(res.body.strategies)).toBe(true);
+      expect(res.body.strategies).toContain('nearest');
+      expect(res.body.strategies).toContain('scored');
+      expect(res.body.strategies).toContain('batch');
+    });
+
+    it('POST /api/v1/dispatch/strategy switches active strategy', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/dispatch/strategy')
+        .send({ strategy: 'scored' })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.activeStrategy).toBe('scored');
+    });
+
+    it('POST /api/v1/dispatch/strategy (invalid strategy) returns 400', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/dispatch/strategy')
+        .send({ strategy: 'non-existent' })
+        .expect(400);
+    });
+
+    it('POST /api/v1/dispatch/match/:requestId matches and assigns driver atomically', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/dispatch/match/${dispatchRequestId}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.assignment).toBeDefined();
+      expect(res.body.assignment.requestId).toBe(dispatchRequestId);
+      expect(res.body.assignment.driverId).toBeDefined();
+      expect(res.body.assignment.distanceKm).toBeGreaterThanOrEqual(0);
+    });
+
+    it('POST /api/v1/dispatch/match/:requestId (already assigned) returns 400', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/v1/dispatch/match/${dispatchRequestId}`)
+        .expect(400);
+    });
+
+    it('POST /api/v1/dispatch/batch processes batch matching', async () => {
+      // Create a pending request specifically for the batch test
+      const createRes = await request(app.getHttpServer())
+        .post('/api/v1/requests')
+        .send({
+          pickupLat: 12.9352,
+          pickupLng: 77.6245,
+          dropLat: 12.9716,
+          dropLng: 77.5946,
+          priority: 3,
+        })
+        .expect(201);
+
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/dispatch/batch')
+        .send({ requestIds: [createRes.body.id], strategy: 'batch' })
+        .expect(200);
+
+      expect(typeof res.body.matchedCount).toBe('number');
+      expect(Array.isArray(res.body.assignments)).toBe(true);
+      expect(res.body.matchedCount).toBeGreaterThanOrEqual(1);
+    }, 30000);
+  });
 });
