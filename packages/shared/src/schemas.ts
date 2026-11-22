@@ -236,6 +236,99 @@ export interface DispatchStrategy {
   ): Assignment | null;
 }
 
+// ============================================================================
+// Analytics & Comparison Schemas (M8)
+// ============================================================================
+
+export const AnalyticsSummarySchema = z.object({
+  averageWaitTimeSeconds: z.number().min(0),
+  averageAssignmentTimeSeconds: z.number().min(0),
+  totalDistanceKm: z.number().min(0),
+  driverUtilizationRate: z.number().min(0).max(1),
+  acceptanceRate: z.number().min(0).max(1),
+  requestsPerHour: z.number().min(0),
+  totalRequests: z.number().int().min(0),
+  totalCompleted: z.number().int().min(0),
+  totalExpired: z.number().int().min(0),
+  totalCancelled: z.number().int().min(0),
+});
+
+export const HeatmapPointSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  weight: z.number().min(0),
+  requestCount: z.number().int().min(0),
+});
+
+export const RepositioningHintSchema = z.object({
+  zoneName: z.string(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  demandWeight: z.number().min(0),
+  availableNearbyDrivers: z.number().int().min(0),
+  recommendedRepositionCount: z.number().int().min(0),
+  priority: z.enum(['low', 'medium', 'high']),
+});
+
+export const DeadZoneAlertSchema = z.object({
+  zoneName: z.string(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  pendingCount: z.number().int().min(0),
+  maxWaitSeconds: z.number().min(0),
+  alertLevel: z.enum(['warning', 'critical']),
+  message: z.string(),
+});
+
+export const PulseScoreResultSchema = z.object({
+  driverId: z.string().uuid(),
+  driverName: z.string(),
+  pulseScore: z.number().min(0).max(100),
+  components: z.object({
+    idleScore: z.number().min(0).max(100),
+    acceptanceScore: z.number().min(0).max(100),
+    proximityScore: z.number().min(0).max(100),
+  }),
+  status: DriverStatusSchema,
+  acceptanceRate: z.number().min(0).max(1),
+  dailyTrips: z.number().int().min(0),
+  rating: z.number().min(0).max(5),
+});
+
+export const StrategyComparisonMetricsSchema = z.object({
+  strategy: DispatchStrategyTypeSchema,
+  requestsMatched: z.number().int().min(0),
+  requestsUnmatched: z.number().int().min(0),
+  avgAssignmentTimeSeconds: z.number().min(0),
+  avgPickupDistanceKm: z.number().min(0),
+  totalDistanceKm: z.number().min(0),
+  driverUtilizationRate: z.number().min(0).max(1),
+  acceptanceRate: z.number().min(0).max(1),
+});
+
+export const AlgorithmComparisonResponseSchema = z.object({
+  seed: z.number().int(),
+  driverCount: z.number().int(),
+  requestCount: z.number().int(),
+  strategies: z.record(DispatchStrategyTypeSchema, StrategyComparisonMetricsSchema),
+  timestamp: z.string(),
+});
+
+export const EtaComparisonResultSchema = z.object({
+  origin: CoordinatesSchema,
+  destination: CoordinatesSchema,
+  haversine: z.object({
+    distanceKm: z.number().min(0),
+    etaMinutes: z.number().min(0),
+  }),
+  osrm: z.object({
+    distanceKm: z.number().min(0),
+    durationMinutes: z.number().min(0),
+    isAvailable: z.boolean(),
+  }),
+  detourFactor: z.number().min(0),
+});
+
 // Inferred Types
 export type User = z.infer<typeof UserSchema>;
 export type Driver = z.infer<typeof DriverSchema>;
@@ -252,3 +345,11 @@ export type RequestOfferedEvent = z.infer<typeof RequestOfferedEventSchema>;
 export type RequestAssignedEvent = z.infer<typeof RequestAssignedEventSchema>;
 export type RequestExpiredEvent = z.infer<typeof RequestExpiredEventSchema>;
 export type RequestCancelledEvent = z.infer<typeof RequestCancelledEventSchema>;
+export type AnalyticsSummary = z.infer<typeof AnalyticsSummarySchema>;
+export type HeatmapPoint = z.infer<typeof HeatmapPointSchema>;
+export type RepositioningHint = z.infer<typeof RepositioningHintSchema>;
+export type DeadZoneAlert = z.infer<typeof DeadZoneAlertSchema>;
+export type PulseScoreResult = z.infer<typeof PulseScoreResultSchema>;
+export type StrategyComparisonMetrics = z.infer<typeof StrategyComparisonMetricsSchema>;
+export type AlgorithmComparisonResponse = z.infer<typeof AlgorithmComparisonResponseSchema>;
+export type EtaComparisonResult = z.infer<typeof EtaComparisonResultSchema>;

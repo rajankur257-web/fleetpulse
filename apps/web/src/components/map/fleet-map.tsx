@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import maplibregl, { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { Flame } from 'lucide-react';
 import { BENGALURU_CENTER, DEFAULT_ZOOM, OSM_RASTER_STYLE } from '../../lib/constants';
 import { DeliveryRequestData, DriverMarkerData } from '../../types/dashboard';
 import { createDriverMarkerElement, updateDriverMarkerElement } from './driver-marker';
@@ -29,6 +30,7 @@ export function FleetMap({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
 
+  const [showDemandHeatmap, setShowDemandHeatmap] = useState(false);
   const driverMarkersRef = useRef<Map<string, Marker>>(new Map());
   const requestMarkersRef = useRef<Map<string, { pickup: Marker; dropoff: Marker }>>(new Map());
 
@@ -172,6 +174,78 @@ export function FleetMap({
     });
   }, [requests]);
 
+  // Sync Demand Heatmap Layer on Live Fleet Map
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const updateHeatmap = () => {
+      if (!map) return;
+      let source = map.getSource('live-demand-heatmap') as maplibregl.GeoJSONSource | undefined;
+
+      const activePickupRequests = requests.filter(
+        (r) => r.status === 'pending' || r.status === 'offered' || r.status === 'assigned',
+      );
+
+      const features = activePickupRequests.map((r) => ({
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [r.pickupLng, r.pickupLat],
+        },
+        properties: { weight: 1 },
+      }));
+
+      if (!source) {
+        if (!map.isStyleLoaded()) return;
+
+        map.addSource('live-demand-heatmap', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features },
+        });
+
+        map.addLayer({
+          id: 'live-demand-heatmap-layer',
+          type: 'heatmap',
+          source: 'live-demand-heatmap',
+          paint: {
+            'heatmap-weight': 1,
+            'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 10, 1, 15, 3],
+            'heatmap-color': [
+              'interpolate',
+              ['linear'],
+              ['heatmap-density'],
+              0, 'rgba(33, 102, 172, 0)',
+              0.2, 'rgb(103, 169, 207)',
+              0.4, 'rgb(209, 229, 240)',
+              0.6, 'rgb(253, 219, 199)',
+              0.8, 'rgb(239, 138, 98)',
+              1, 'rgb(178, 24, 43)',
+            ],
+            'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 10, 15, 15, 35],
+            'heatmap-opacity': 0.7,
+          },
+        });
+      } else {
+        source.setData({ type: 'FeatureCollection', features });
+      }
+
+      if (map.getLayer('live-demand-heatmap-layer')) {
+        map.setLayoutProperty(
+          'live-demand-heatmap-layer',
+          'visibility',
+          showDemandHeatmap ? 'visible' : 'none',
+        );
+      }
+    };
+
+    if (map.isStyleLoaded()) {
+      updateHeatmap();
+    } else {
+      map.once('load', updateHeatmap);
+    }
+  }, [requests, showDemandHeatmap]);
+
   return (
     <div className="relative w-full h-full flex-1 overflow-hidden">
       <div
@@ -179,6 +253,22 @@ export function FleetMap({
         data-testid="fleet-map-container"
         className="w-full h-full cursor-crosshair"
       />
+
+      {/* Heatmap Toggle Button */}
+      <div className="absolute top-4 left-4 z-20">
+        <button
+          onClick={() => setShowDemandHeatmap(!showDemandHeatmap)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium shadow-md backdrop-blur border transition ${
+            showDemandHeatmap
+              ? 'bg-rose-600/90 text-white border-rose-500'
+              : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:text-white'
+          }`}
+          title="Toggle Demand Heatmap overlay"
+        >
+          <Flame className="w-3.5 h-3.5" />
+          <span>Demand Heatmap</span>
+        </button>
+      </div>
 
       {/* Crosshair Banner when in picking mode */}
       {pickingMode && (

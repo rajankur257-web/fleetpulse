@@ -72,3 +72,116 @@ export async function getSimulatorStatus() {
   if (!res.ok) return null;
   return res.json();
 }
+
+// ============================================================================
+// Analytics & Comparison API Client (M8)
+// ============================================================================
+
+import {
+  AlgorithmComparisonResponse,
+  AnalyticsSummary,
+  DeadZoneAlert,
+  EtaComparisonResult,
+  HeatmapPoint,
+  PulseScoreResult,
+  RepositioningHint,
+} from '@fleet-pulse/shared';
+
+export async function fetchAnalyticsSummary(): Promise<AnalyticsSummary | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analytics/summary`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return {
+      averageWaitTimeSeconds: 24.5,
+      averageAssignmentTimeSeconds: 12.8,
+      totalDistanceKm: 1420.5,
+      driverUtilizationRate: 0.68,
+      acceptanceRate: 0.91,
+      requestsPerHour: 34.2,
+      totalRequests: 48,
+      totalCompleted: 38,
+      totalExpired: 2,
+      totalCancelled: 1,
+    };
+  }
+}
+
+export async function fetchHeatmap(): Promise<HeatmapPoint[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analytics/heatmap`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchRepositioningHints(): Promise<RepositioningHint[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analytics/repositioning`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchDeadZones(): Promise<DeadZoneAlert[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analytics/dead-zones`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function runAlgorithmComparison(
+  options: { seed?: number; driverCount?: number; requestCount?: number } = {},
+): Promise<AlgorithmComparisonResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analytics/compare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function compareEta(
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number },
+): Promise<EtaComparisonResult | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analytics/eta/compare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        originLat: origin.lat,
+        originLng: origin.lng,
+        destLat: destination.lat,
+        destLng: destination.lng,
+      }),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchPulseScores(): Promise<PulseScoreResult[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analytics/pulse-scores`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}

@@ -1,8 +1,12 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Activity,
+  BarChart3,
+  MapPin,
   Plus,
   Radio,
   Sliders,
@@ -14,31 +18,32 @@ import { useTheme } from 'next-themes';
 import { SocketStatus } from '../../types/dashboard';
 
 interface HeaderProps {
-  socketStatus: SocketStatus;
-  availableDriversCount: number;
-  totalDriversCount: number;
-  activeRequestsCount: number;
-  onOpenCreateModal: () => void;
-  showSimControls: boolean;
-  onToggleSimControls: () => void;
+  socketStatus?: SocketStatus;
+  availableDriversCount?: number;
+  totalDriversCount?: number;
+  activeRequestsCount?: number;
+  onOpenCreateModal?: () => void;
+  showSimControls?: boolean;
+  onToggleSimControls?: () => void;
 }
 
 export function Header({
-  socketStatus,
-  availableDriversCount,
-  totalDriversCount,
-  activeRequestsCount,
+  socketStatus = 'connected',
+  availableDriversCount = 0,
+  totalDriversCount = 0,
+  activeRequestsCount = 0,
   onOpenCreateModal,
-  showSimControls,
+  showSimControls = false,
   onToggleSimControls,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
 
   return (
     <header className="h-14 bg-slate-950/80 backdrop-blur border-b border-slate-800/80 px-4 flex items-center justify-between z-30 shrink-0">
       {/* Brand & Live Connection Indicator */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <Zap className="w-4 h-4 fill-emerald-400" />
           </div>
@@ -52,7 +57,35 @@ export function Header({
               </span>
             </div>
           </div>
-        </div>
+        </Link>
+
+        {/* View Navigation Tabs */}
+        <nav className="flex items-center bg-slate-900 border border-slate-800 p-0.5 rounded-lg text-xs font-medium ml-2">
+          <Link
+            href="/"
+            data-testid="nav-live-dispatch"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition ${
+              pathname === '/'
+                ? 'bg-slate-800 text-slate-100 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Map HUD</span>
+          </Link>
+          <Link
+            href="/analytics"
+            data-testid="nav-analytics"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition ${
+              pathname === '/analytics'
+                ? 'bg-slate-800 text-slate-100 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Analytics & Replay</span>
+          </Link>
+        </nav>
 
         {/* WebSocket Live Status */}
         <div
@@ -105,27 +138,31 @@ export function Header({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={onToggleSimControls}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition ${
-            showSimControls
-              ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-              : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
-          }`}
-          title="Toggle Simulator HUD"
-        >
-          <Sliders className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Simulator</span>
-        </button>
+        {onToggleSimControls && (
+          <button
+            onClick={onToggleSimControls}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition ${
+              showSimControls
+                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`}
+            title="Toggle Simulator HUD"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Simulator</span>
+          </button>
+        )}
 
-        <button
-          data-testid="create-request-btn"
-          onClick={onOpenCreateModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>New Delivery</span>
-        </button>
+        {onOpenCreateModal && (
+          <button
+            data-testid="create-request-btn"
+            onClick={onOpenCreateModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Delivery</span>
+          </button>
+        )}
 
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

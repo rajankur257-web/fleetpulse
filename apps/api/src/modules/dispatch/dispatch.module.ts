@@ -17,6 +17,12 @@ import { BatchStrategy } from './strategies/batch.strategy';
     StrategyRegistry,
     DispatchService,
   ],
-  exports: [DispatchService, StrategyRegistry],
+  exports: [
+    DispatchService,
+    StrategyRegistry,
+    NearestDriverStrategy,
+    ScoredStrategy,
+    BatchStrategy,
+  ],
 })
 export class DispatchModule {}
