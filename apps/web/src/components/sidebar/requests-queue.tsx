@@ -1,17 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Clock, Package } from 'lucide-react';
-import { DeliveryRequestData } from '../../types/dashboard';
+import React, { useMemo, useState } from 'react';
+import { ArrowRight, Clock, Package, User } from 'lucide-react';
+import { DeliveryRequestData, DriverMarkerData } from '../../types/dashboard';
 import { REQUEST_STATUS_COLORS } from '../../lib/constants';
+import {
+  getCustomerName,
+  getFormattedDriverName,
+  getNeighborhoodName,
+  getPackageType,
+} from '../../lib/order-metadata';
 
 interface RequestsQueueProps {
   requests: DeliveryRequestData[];
+  drivers?: DriverMarkerData[];
   onFlyTo: (coords: { lat: number; lng: number }) => void;
 }
 
-export function RequestsQueue({ requests, onFlyTo }: RequestsQueueProps) {
+export function RequestsQueue({ requests, drivers = [], onFlyTo }: RequestsQueueProps) {
   const [filter, setFilter] = useState<'all' | 'pending' | 'active' | 'delivered'>('all');
+
+  const driverMap = useMemo(() => {
+    const map = new Map<string, DriverMarkerData>();
+    for (const d of drivers) {
+      map.set(d.id, d);
+    }
+    return map;
+  }, [drivers]);
 
   const filteredRequests = requests.filter((r) => {
     if (filter === 'all') return true;
@@ -84,44 +99,68 @@ export function RequestsQueue({ requests, onFlyTo }: RequestsQueueProps) {
               label: req.status,
             };
 
+            const customerName = getCustomerName(req.id);
+            const packageType = getPackageType(req.id);
+            const pickupArea = getNeighborhoodName(req.pickupLat, req.pickupLng);
+            const dropArea = getNeighborhoodName(req.dropLat, req.dropLng);
+
+            // Resolve assigned driver real name
+            let assignedDriverDisplay: string | null = null;
+            if (req.assignedDriverId) {
+              const matchedDriver = driverMap.get(req.assignedDriverId);
+              assignedDriverDisplay = matchedDriver
+                ? getFormattedDriverName(matchedDriver.name, matchedDriver.id)
+                : getFormattedDriverName(null, req.assignedDriverId);
+            }
+
             return (
               <div
                 key={req.id}
                 onClick={() => onFlyTo({ lat: req.pickupLat, lng: req.pickupLng })}
                 className="p-3 rounded-lg bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:bg-slate-900/90 dark:border-slate-800/80 dark:hover:border-slate-700 dark:hover:bg-slate-800/70 cursor-pointer transition flex flex-col gap-2 text-xs shadow-sm"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-700 dark:text-slate-300">
-                    <Package className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-                    <span>#{req.id.slice(0, 8)}</span>
+                {/* Header: Customer Name, Package Type & Status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-slate-100 text-xs">
+                      <User className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
+                      <span>{customerName}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <Package className="w-2.5 h-2.5" />
+                      {packageType} • <span className="font-mono">#{req.id.slice(0, 6)}</span>
+                    </span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusConfig.bg}`}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 ${statusConfig.bg}`}
                   >
                     {statusConfig.label}
                   </span>
                 </div>
 
-                {/* Pickup & Drop coords */}
-                <div className="space-y-1 text-[11px] text-slate-600 dark:text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                    <span className="truncate">
-                      Pick: {req.pickupLat.toFixed(4)}, {req.pickupLng.toFixed(4)}
-                    </span>
+                {/* Human-readable Route Hubs */}
+                <div className="p-1.5 rounded bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center gap-1 font-medium truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="truncate">{pickupArea}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
-                    <span className="truncate">
-                      Drop: {req.dropLat.toFixed(4)}, {req.dropLng.toFixed(4)}
-                    </span>
+                  <ArrowRight className="w-3 h-3 text-slate-400 shrink-0 mx-1" />
+                  <div className="flex items-center gap-1 font-medium truncate text-right">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+                    <span className="truncate">{dropArea}</span>
                   </div>
                 </div>
 
-                {/* Footer metadata */}
-                <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-800/60 font-mono">
+                {/* Pickup & Drop Coords (subtle) */}
+                <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                  <span>Pick: {req.pickupLat.toFixed(3)}, {req.pickupLng.toFixed(3)}</span>
+                  <span>Drop: {req.dropLat.toFixed(3)}, {req.dropLng.toFixed(3)}</span>
+                </div>
+
+                {/* Footer Metadata: Timestamp & Assigned Driver */}
+                <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100 dark:border-slate-800/60 font-mono">
                   <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
+                    <Clock className="w-3 h-3 text-slate-400" />
                     <span>
                       {req.createdAt
                         ? new Date(req.createdAt).toLocaleTimeString([], {
@@ -132,10 +171,13 @@ export function RequestsQueue({ requests, onFlyTo }: RequestsQueueProps) {
                         : '--:--'}
                     </span>
                   </div>
-                  {req.assignedDriverId ? (
-                    <span className="text-amber-600 dark:text-amber-400">Driver: #{req.assignedDriverId.slice(0, 6)}</span>
+                  {assignedDriverDisplay ? (
+                    <span className="text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1 font-sans">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      {assignedDriverDisplay}
+                    </span>
                   ) : (
-                    <span className="text-slate-400 dark:text-slate-500">Unassigned</span>
+                    <span className="text-slate-400 dark:text-slate-500 font-sans italic">Unassigned</span>
                   )}
                 </div>
               </div>

@@ -236,7 +236,7 @@ export default function DispatcherDashboardPage() {
   ).length;
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-200">
       {/* Top Header with HUD Metrics & Socket Indicator */}
       <Header
         socketStatus={socketStatus}

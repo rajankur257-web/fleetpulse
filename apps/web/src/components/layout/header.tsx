@@ -179,7 +179,8 @@ export function Header({
           onClick={handleToggleTheme}
           className="p-1.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition"
           aria-label="Toggle theme"
-          title={isDark ? 'Switch to day mode' : 'Switch to night mode'}
+          title={mounted ? (isDark ? 'Switch to day mode' : 'Switch to night mode') : 'Toggle day / night theme'}
+          suppressHydrationWarning
         >
           {mounted ? (
             isDark ? (

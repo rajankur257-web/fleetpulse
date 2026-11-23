@@ -23,6 +23,7 @@ import {
   BENGALURU_BOUNDS,
   BENGALURU_HOTSPOTS,
   Hotspot,
+  REAL_DRIVER_NAMES,
   SimDriverAgent,
   SimulatorConfig,
   SimulatorStats,
@@ -664,10 +665,12 @@ export class SimulatorService implements OnModuleDestroy {
         const hub = this.pickWeightedHotspot();
         const lat = hub.lat + this.prng.range(-0.01, 0.01);
         const lng = hub.lng + this.prng.range(-0.01, 0.01);
+        const nameIdx = (driversToUse.length + i - 1) % REAL_DRIVER_NAMES.length;
+        const driverName = REAL_DRIVER_NAMES[nameIdx]!;
 
         const newDriver = await this.prisma.driver.create({
           data: {
-            name: `Sim Driver #${driversToUse.length + i}`,
+            name: driverName,
             phone: `+91990000${(1000 + driversToUse.length + i).toString()}`,
             status: DriverStatus.AVAILABLE,
             rating: Math.round(this.prng.range(4.2, 5.0) * 10) / 10,
@@ -676,6 +679,19 @@ export class SimulatorService implements OnModuleDestroy {
           },
         });
         driversToUse.push(newDriver);
+      }
+    }
+
+    // Upgrade any legacy 'Sim Driver #' names in DB to realistic names
+    for (let i = 0; i < driversToUse.length; i++) {
+      const d = driversToUse[i]!;
+      if (d.name.startsWith('Sim Driver')) {
+        const realName = REAL_DRIVER_NAMES[i % REAL_DRIVER_NAMES.length]!;
+        await this.prisma.driver.update({
+          where: { id: d.id },
+          data: { name: realName },
+        });
+        d.name = realName;
       }
     }
 

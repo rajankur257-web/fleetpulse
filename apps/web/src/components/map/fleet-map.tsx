@@ -8,6 +8,11 @@ import { BENGALURU_CENTER, DEFAULT_ZOOM, OSM_RASTER_STYLE } from '../../lib/cons
 import { DeliveryRequestData, DriverMarkerData } from '../../types/dashboard';
 import { createDriverMarkerElement, updateDriverMarkerElement } from './driver-marker';
 import { createRequestPinElement } from './request-pin';
+import {
+  getCustomerName,
+  getFormattedDriverName,
+  getNeighborhoodName,
+} from '../../lib/order-metadata';
 
 interface FleetMapProps {
   drivers: DriverMarkerData[];
@@ -89,12 +94,13 @@ export function FleetMap({
     for (const driver of drivers) {
       activeDriverIds.add(driver.id);
       let marker = driverMarkersRef.current.get(driver.id);
+      const displayName = getFormattedDriverName(driver.name, driver.id);
 
       if (!marker) {
         const el = createDriverMarkerElement(
           driver.status,
           driver.heading,
-          driver.name,
+          displayName,
           driver.speed,
         );
         el.addEventListener('click', (e) => {
@@ -145,8 +151,11 @@ export function FleetMap({
       let pins = requestMarkersRef.current.get(req.id);
 
       if (!pins) {
-        const pEl = createRequestPinElement('pickup', req.id);
-        const dEl = createRequestPinElement('dropoff', req.id);
+        const cust = getCustomerName(req.id);
+        const pickArea = getNeighborhoodName(req.pickupLat, req.pickupLng);
+        const dropArea = getNeighborhoodName(req.dropLat, req.dropLng);
+        const pEl = createRequestPinElement('pickup', req.id, cust, pickArea);
+        const dEl = createRequestPinElement('dropoff', req.id, cust, dropArea);
 
         const pickupMarker = new maplibregl.Marker({ element: pEl })
           .setLngLat([req.pickupLng, req.pickupLat])

@@ -28,6 +28,44 @@ export const BENGALURU_HOTSPOTS: readonly Hotspot[] = [
   { name: 'Hebbal', lat: 13.0358, lng: 77.597, weight: 1.1 },
 ];
 
+export const REAL_DRIVER_NAMES: readonly string[] = [
+  'Rajesh Kumar',
+  'Suresh Pillai',
+  'Ramesh Babu',
+  'Amit Sharma',
+  'Vikram Singh',
+  'Deepak Rao',
+  'Sanjay Patel',
+  'Sunil Gowda',
+  'Praveen Joshi',
+  'Karthik Raja',
+  'Naveen Kumar',
+  'Vijay Reddy',
+  'Santosh Murthy',
+  'Anand Verma',
+  'Ganesh Iyer',
+  'Mahesh Yadav',
+  'Ashok Shetty',
+  'Bharath Gowda',
+  'Chandan Rao',
+  'Darshan Kumar',
+  'Chethan Gowda',
+  'Lokesh Murthy',
+  'Mohan Das',
+  'Nikhil Sharma',
+  'Pawan Verma',
+  'Rakesh Nair',
+  'Shankar Pillai',
+  'Yogesh Joshi',
+  'Raghu Ram',
+  'Harish Babu',
+  'Girish Patel',
+  'Manjunath Gowda',
+  'Venkatesh Prasad',
+  'Prashant Kumar',
+  'Arun Menon',
+];
+
 export interface ActiveSimTrip {
   requestId: string;
   pickupLat: number;

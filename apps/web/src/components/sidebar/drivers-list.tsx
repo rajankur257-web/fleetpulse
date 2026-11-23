@@ -1,12 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Navigation, Phone, Search, Star } from 'lucide-react';
-import { DriverMarkerData } from '../../types/dashboard';
+import { Navigation, Phone, Search, Star, User } from 'lucide-react';
+import { DeliveryRequestData, DriverMarkerData } from '../../types/dashboard';
 import { STATUS_COLORS } from '../../lib/constants';
+import {
+  getCustomerName,
+  getFormattedDriverName,
+  getNeighborhoodName,
+} from '../../lib/order-metadata';
 
 interface DriversListProps {
   drivers: DriverMarkerData[];
+  requests?: DeliveryRequestData[];
   selectedDriverId: string | null;
   onSelectDriver: (driver: DriverMarkerData) => void;
   onFlyTo: (coords: { lat: number; lng: number }) => void;
@@ -14,6 +20,7 @@ interface DriversListProps {
 
 export function DriversList({
   drivers,
+  requests = [],
   selectedDriverId,
   onSelectDriver,
   onFlyTo,
@@ -22,7 +29,9 @@ export function DriversList({
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'busy' | 'offline'>('all');
 
   const filteredDrivers = drivers.filter((d) => {
+    const displayName = getFormattedDriverName(d.name, d.id);
     const matchesSearch =
+      displayName.toLowerCase().includes(search.toLowerCase()) ||
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.phone.includes(search);
     const matchesStatus =
@@ -93,6 +102,7 @@ export function DriversList({
           filteredDrivers.map((driver) => {
             const isSelected = driver.id === selectedDriverId;
             const color = STATUS_COLORS[driver.status] || STATUS_COLORS.offline;
+            const displayName = getFormattedDriverName(driver.name, driver.id);
 
             return (
               <div
@@ -110,7 +120,7 @@ export function DriversList({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${color.bg}`} />
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">{driver.name}</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{displayName}</span>
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-amber-500 dark:text-amber-400 font-mono">
                     <Star className="w-3 h-3 fill-amber-500 dark:fill-amber-400" />
@@ -135,8 +145,18 @@ export function DriversList({
                 </div>
 
                 {driver.activeRequestId && (
-                  <div className="text-[10px] text-amber-600 dark:text-amber-300 font-mono pt-1 border-t border-slate-200 dark:border-slate-800">
-                    Active Order: #{driver.activeRequestId.slice(0, 8)}
+                  <div className="text-[10px] text-amber-700 dark:text-amber-300 font-mono pt-1 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-1">
+                    <span className="font-sans font-medium truncate flex items-center gap-1">
+                      <User className="w-3 h-3 text-amber-500 shrink-0" />
+                      <span className="truncate">
+                        To: {getCustomerName(driver.activeRequestId)}
+                        {(() => {
+                          const matched = requests.find((r) => r.id === driver.activeRequestId);
+                          return matched ? ` (${getNeighborhoodName(matched.dropLat, matched.dropLng)})` : '';
+                        })()}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-slate-400 text-[9px]">#{driver.activeRequestId.slice(0, 6)}</span>
                   </div>
                 )}
               </div>
