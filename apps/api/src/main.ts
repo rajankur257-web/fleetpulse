@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
@@ -14,6 +15,10 @@ async function bootstrap() {
 
   // Security headers
   app.use(helmet());
+
+  // Request body size limits (OWASP API4 mitigation)
+  app.use(json({ limit: '1mb' }));
+  app.use(urlencoded({ limit: '1mb', extended: true }));
 
   // CORS configuration
   const corsOrigins = process.env.CORS_ORIGINS

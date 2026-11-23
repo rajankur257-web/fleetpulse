@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Inject,
   Injectable,
   Logger,
@@ -33,6 +34,10 @@ export interface NearbyDriverResult {
 export class DriversService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DriversService.name);
   private locationBuffer: Map<
+    string,
+    { lat: number; lng: number; lastLocationAt: Date }
+  > = new Map();
+  private lastKnownLocations: Map<
     string,
     { lat: number; lng: number; lastLocationAt: Date }
   > = new Map();
@@ -148,11 +153,55 @@ export class DriversService implements OnModuleInit, OnModuleDestroy {
     const lat = Number(dto.lat);
     const lng = Number(dto.lng);
 
+    // Range checks
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      throw new BadRequestException('Coordinates out of range (lat: -90..90, lng: -180..180)');
+    }
+
+    // Anti-spoofing velocity & jump validation
+    let prev = this.lastKnownLocations.get(id);
+    if (!prev) {
+      const dbDriver = await this.prisma.driver.findUnique({
+        where: { id },
+        select: { lat: true, lng: true, lastLocationAt: true },
+      });
+      if (dbDriver && dbDriver.lastLocationAt) {
+        prev = {
+          lat: dbDriver.lat,
+          lng: dbDriver.lng,
+          lastLocationAt: dbDriver.lastLocationAt,
+        };
+      }
+    }
+
+    const now = new Date();
+
+    if (prev) {
+      const distanceKm = haversineKm({ lat: prev.lat, lng: prev.lng }, { lat, lng });
+      const elapsedSeconds = Math.max(0.1, (now.getTime() - prev.lastLocationAt.getTime()) / 1000);
+
+      // If updated within 60 seconds, check realistic velocity threshold (200 km/h) or teleportation (>1km in <5s)
+      if (elapsedSeconds < 60) {
+        const speedKmh = (distanceKm / elapsedSeconds) * 3600;
+        if (speedKmh > 200 || (distanceKm > 1 && elapsedSeconds < 5)) {
+          throw new BadRequestException(
+            `Location update rejected: Teleportation / unrealistic velocity jump detected (${speedKmh.toFixed(
+              0,
+            )} km/h across ${distanceKm.toFixed(2)} km in ${elapsedSeconds.toFixed(1)}s).`,
+          );
+        }
+      }
+    }
+
     // 1. Immediate hot-path write to Redis GEO
     await this.redis.geoAdd('drivers:geo', lng, lat, id);
 
-    // 2. Buffer write for PostgreSQL batch persistence
-    const now = new Date();
+    // 2. Buffer write for PostgreSQL batch persistence & persistent in-memory tracking
+    this.lastKnownLocations.set(id, {
+      lat,
+      lng,
+      lastLocationAt: now,
+    });
     this.locationBuffer.set(id, {
       lat,
       lng,
@@ -199,14 +248,18 @@ export class DriversService implements OnModuleInit, OnModuleDestroy {
         const chunk = entries.slice(i, i + CHUNK_SIZE);
         await Promise.all(
           chunk.map(([id, coords]) =>
-            this.prisma.driver.update({
-              where: { id },
-              data: {
-                lat: coords.lat,
-                lng: coords.lng,
-                lastLocationAt: coords.lastLocationAt,
-              },
-            }),
+            this.prisma.driver
+              .update({
+                where: { id },
+                data: {
+                  lat: coords.lat,
+                  lng: coords.lng,
+                  lastLocationAt: coords.lastLocationAt,
+                },
+              })
+              .catch((err) => {
+                this.logger.debug(`Could not update driver ${id}: ${err.message}`);
+              }),
           ),
         );
       }

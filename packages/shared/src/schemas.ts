@@ -329,6 +329,43 @@ export const EtaComparisonResultSchema = z.object({
   detourFactor: z.number().min(0),
 });
 
+// ============================================================================
+// Auth & Security Schemas (M10)
+// ============================================================================
+
+export const RegisterRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(100),
+  name: z.string().min(1).max(100),
+  role: UserRoleSchema.optional().default(UserRole.DRIVER),
+  driverId: z.string().uuid().optional(),
+});
+
+export const LoginRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+export const RefreshTokenRequestSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
+export const AuthResponseSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+  expiresIn: z.number().positive(),
+  user: UserSchema,
+});
+
+export const JwtPayloadSchema = z.object({
+  sub: z.string(),
+  email: z.string().email(),
+  role: UserRoleSchema,
+  driverId: z.string().uuid().nullable().optional(),
+  iat: z.number().optional(),
+  exp: z.number().optional(),
+});
+
 // Inferred Types
 export type User = z.infer<typeof UserSchema>;
 export type Driver = z.infer<typeof DriverSchema>;
@@ -353,3 +390,8 @@ export type PulseScoreResult = z.infer<typeof PulseScoreResultSchema>;
 export type StrategyComparisonMetrics = z.infer<typeof StrategyComparisonMetricsSchema>;
 export type AlgorithmComparisonResponse = z.infer<typeof AlgorithmComparisonResponseSchema>;
 export type EtaComparisonResult = z.infer<typeof EtaComparisonResultSchema>;
+export type RegisterRequestDto = z.infer<typeof RegisterRequestSchema>;
+export type LoginRequestDto = z.infer<typeof LoginRequestSchema>;
+export type RefreshTokenRequestDto = z.infer<typeof RefreshTokenRequestSchema>;
+export type AuthResponse = z.infer<typeof AuthResponseSchema>;
+export type JwtPayload = z.infer<typeof JwtPayloadSchema>;

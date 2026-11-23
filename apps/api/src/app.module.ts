@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { validateEnv } from './config/env.validation';
 import { DriversModule } from './modules/drivers/drivers.module';
@@ -9,6 +11,7 @@ import { DispatchModule } from './modules/dispatch/dispatch.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { SimulatorModule } from './modules/simulator/simulator.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 
@@ -19,6 +22,12 @@ import { RedisModule } from './redis/redis.module';
       envFilePath: ['.env', '../../.env'],
       validate: validateEnv,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 120,
+      },
+    ]),
     LoggerModule.forRoot({
       pinoHttp: {
         transport:
@@ -36,6 +45,7 @@ import { RedisModule } from './redis/redis.module';
     }),
     PrismaModule,
     RedisModule,
+    AuthModule,
     HealthModule,
     DriversModule,
     RequestsModule,
@@ -45,6 +55,11 @@ import { RedisModule } from './redis/redis.module';
     AnalyticsModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

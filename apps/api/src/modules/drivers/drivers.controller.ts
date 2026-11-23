@@ -9,8 +9,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { DriverOwnershipGuard } from '../../common/guards/driver-ownership.guard';
 import { DriversService } from './drivers.service';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { QueryDriversDto } from './dto/query-drivers.dto';
@@ -61,11 +63,13 @@ export class DriversController {
     return this.driversService.findOne(id);
   }
 
+  @UseGuards(DriverOwnershipGuard)
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update driver operational status (available/busy/offline)' })
   @ApiParam({ name: 'id', description: 'Driver UUID' })
   @ApiResponse({ status: 200, description: 'Driver status updated' })
   @ApiResponse({ status: 400, description: 'Invalid status enum' })
+  @ApiResponse({ status: 403, description: 'Forbidden: Driver ownership mismatch' })
   @ApiResponse({ status: 404, description: 'Driver not found' })
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
@@ -74,6 +78,7 @@ export class DriversController {
     return this.driversService.updateStatus(id, dto.status);
   }
 
+  @UseGuards(DriverOwnershipGuard)
   @Post(':id/location')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -81,7 +86,8 @@ export class DriversController {
   })
   @ApiParam({ name: 'id', description: 'Driver UUID' })
   @ApiResponse({ status: 200, description: 'Location update acknowledged' })
-  @ApiResponse({ status: 400, description: 'Invalid coordinate inputs' })
+  @ApiResponse({ status: 400, description: 'Invalid coordinate inputs or anti-spoofing velocity violation' })
+  @ApiResponse({ status: 403, description: 'Forbidden: Driver ownership mismatch' })
   updateLocation(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDriverLocationDto,
