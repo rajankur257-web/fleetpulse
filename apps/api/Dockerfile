@@ -40,7 +40,7 @@ COPY apps/api/package.json ./apps/api/
 COPY apps/api/prisma ./apps/api/prisma
 
 RUN pnpm install --prod --frozen-lockfile
-RUN cd apps/api && npx prisma generate
+RUN cd apps/api && npx --yes prisma@6.2.1 generate
 
 COPY --from=builder --chown=appuser:appgroup /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder --chown=appuser:appgroup /app/apps/api/dist ./apps/api/dist
