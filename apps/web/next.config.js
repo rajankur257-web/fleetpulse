@@ -1,15 +1,4 @@
-const path = require('path');
-
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
-    };
-    return config;
-  },
-};
+const nextConfig = {};
 
 module.exports = nextConfig;

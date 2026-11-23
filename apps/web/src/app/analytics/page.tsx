@@ -14,13 +14,28 @@ import {
   BarChart3,
   RefreshCw,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { Header } from '../../components/layout/header';
 import { SummaryCards } from '../../components/analytics/summary-cards';
-import { DemandHeatmapMap } from '../../components/analytics/demand-heatmap-map';
 import { RepositionAlerts } from '../../components/analytics/reposition-alerts';
 import { AlgorithmComparison } from '../../components/analytics/algorithm-comparison';
 import { EtaCalculator } from '../../components/analytics/eta-calculator';
 import { PulseScoresTable } from '../../components/analytics/pulse-scores-table';
+
+const DemandHeatmapMap = dynamic(
+  () =>
+    import('../../components/analytics/demand-heatmap-map').then(
+      (mod) => mod.DemandHeatmapMap,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[400px] flex items-center justify-center bg-slate-100 dark:bg-slate-900 text-slate-500 font-mono text-xs rounded-xl">
+        Loading demand heatmap...
+      </div>
+    ),
+  },
+);
 import {
   fetchAnalyticsSummary,
   fetchDeadZones,

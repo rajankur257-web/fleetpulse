@@ -21,10 +21,22 @@ import {
   SocketStatus,
 } from '../types/dashboard';
 import { Header } from '../components/layout/header';
-import { FleetMap } from '../components/map/fleet-map';
+import dynamic from 'next/dynamic';
 import { SidePanel } from '../components/sidebar/side-panel';
 import { CreateRequestModal } from '../components/sidebar/create-request-modal';
 import { SimControls } from '../components/simulator/sim-controls';
+
+const FleetMap = dynamic(
+  () => import('../components/map/fleet-map').then((mod) => mod.FleetMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-900 text-slate-500 font-mono text-xs">
+        Loading live dispatch map...
+      </div>
+    ),
+  },
+);
 
 export default function DispatcherDashboardPage() {
   const [socketStatus, setSocketStatus] = useState<SocketStatus>('disconnected');

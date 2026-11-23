@@ -15,12 +15,11 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
 ENV NEXT_PUBLIC_DISPATCHER_TOKEN=$NEXT_PUBLIC_DISPATCHER_TOKEN
 
-COPY package.json pnpm-lock.yaml turbo.json tsconfig.base.json .npmrc* ./
-# Restrict workspace strictly to web and shared (omits apps/mobile with React 18)
-RUN printf "packages:\n  - 'apps/web'\n  - 'packages/shared'\n" > pnpm-workspace.yaml
-
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json .npmrc* ./
 COPY packages/shared/package.json ./packages/shared/
+COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
+COPY apps/mobile/package.json ./apps/mobile/
 
 RUN pnpm install --no-frozen-lockfile
 
@@ -42,8 +41,7 @@ RUN apk add --no-cache dumb-init wget \
 
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
-COPY package.json pnpm-lock.yaml turbo.json .npmrc* ./
-RUN printf "packages:\n  - 'apps/web'\n  - 'packages/shared'\n" > pnpm-workspace.yaml
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc* ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
 
