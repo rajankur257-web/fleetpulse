@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
@@ -35,8 +35,14 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Global REST prefix
-  app.setGlobalPrefix('api/v1');
+  // Global REST prefix (exclude root '/' and Swagger '/docs')
+  app.setGlobalPrefix('api/v1', {
+    exclude: [
+      { path: '/', method: RequestMethod.GET },
+      { path: 'docs', method: RequestMethod.GET },
+      { path: 'docs/(.*)', method: RequestMethod.GET },
+    ],
+  });
 
   // Global DTO input validation
   app.useGlobalPipes(

@@ -14,6 +14,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -54,7 +55,7 @@ import { RedisModule } from './redis/redis.module';
     SimulatorModule,
     AnalyticsModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
