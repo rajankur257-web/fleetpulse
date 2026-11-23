@@ -20,10 +20,16 @@ async function bootstrap() {
   app.use(json({ limit: '1mb' }));
   app.use(urlencoded({ limit: '1mb', extended: true }));
 
+  // Enable graceful shutdown hooks for SIGTERM / SIGINT
+  app.enableShutdownHooks();
+
   // CORS configuration
-  const corsOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
-    : ['http://localhost:3000', 'http://localhost:8081'];
+  const corsOriginsEnv = process.env.CORS_ORIGINS;
+  const corsOrigins = corsOriginsEnv === '*'
+    ? '*'
+    : corsOriginsEnv
+      ? corsOriginsEnv.split(',').map((o) => o.trim())
+      : ['http://localhost:3000', 'http://localhost:8081'];
   app.enableCors({
     origin: corsOrigins,
     credentials: true,

@@ -352,7 +352,7 @@ export class SimulatorService implements OnModuleDestroy {
                 where: { id: trip.requestId },
                 data: { status: RequestStatus.PICKED_UP },
               })
-              .catch((err) => this.logger.debug(`Error updating pickup: ${err.message}`));
+              .catch((err: Error) => this.logger.debug(`Error updating pickup: ${err.message}`));
           } else {
             // Delivered! Complete the trip
             this.prisma.deliveryRequest
@@ -363,7 +363,7 @@ export class SimulatorService implements OnModuleDestroy {
                   completedAt: new Date(),
                 },
               })
-              .catch((err) => this.logger.debug(`Error updating delivery: ${err.message}`));
+              .catch((err: Error) => this.logger.debug(`Error updating delivery: ${err.message}`));
 
             this.prisma.driver
               .update({
@@ -374,7 +374,7 @@ export class SimulatorService implements OnModuleDestroy {
                   dailyTrips: { increment: 1 },
                 },
               })
-              .catch((err) => this.logger.debug(`Error releasing driver: ${err.message}`));
+              .catch((err: Error) => this.logger.debug(`Error releasing driver: ${err.message}`));
 
             driver.status = 'available';
             driver.currentTrip = null;
