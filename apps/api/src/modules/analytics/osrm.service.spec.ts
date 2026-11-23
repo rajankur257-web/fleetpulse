@@ -66,4 +66,51 @@ describe('OsrmService', () => {
     expect(result.osrm.durationMinutes).toBe(15);
     expect(result.detourFactor).toBeGreaterThan(1.0);
   });
+
+  it('parses valid OSRM GeoJSON route geometry coordinates into LatLng waypoints', async () => {
+    const mockGeoJsonResponse = {
+      code: 'Ok',
+      routes: [
+        {
+          distance: 4200,
+          duration: 600,
+          geometry: {
+            coordinates: [
+              [77.5946, 12.9716],
+              [77.6000, 12.9600],
+              [77.6245, 12.9352],
+            ],
+          },
+        },
+      ],
+    };
+
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGeoJsonResponse,
+    } as unknown as Response);
+
+    const origin = { lat: 12.9716, lng: 77.5946 };
+    const destination = { lat: 12.9352, lng: 77.6245 };
+
+    const path = await service.getRoutePath(origin, destination);
+
+    expect(path).toHaveLength(3);
+    expect(path[0]).toEqual({ lat: 12.9716, lng: 77.5946 });
+    expect(path[1]).toEqual({ lat: 12.96, lng: 77.6 });
+    expect(path[2]).toEqual({ lat: 12.9352, lng: 77.6245 });
+  });
+
+  it('returns fallback linear waypoints when OSRM geometry query fails', async () => {
+    jest.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network error'));
+
+    const origin = { lat: 12.9716, lng: 77.5946 };
+    const destination = { lat: 12.9352, lng: 77.6245 };
+
+    const path = await service.getRoutePath(origin, destination);
+
+    expect(path.length).toBeGreaterThanOrEqual(2);
+    expect(path[0]).toEqual(origin);
+    expect(path[path.length - 1]).toEqual(destination);
+  });
 });

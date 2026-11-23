@@ -117,4 +117,85 @@ export class OsrmService {
       detourFactor,
     };
   }
+
+  private readonly pathCache = new Map<string, Coordinates[]>();
+
+  /**
+   * Fetches detailed turn-by-turn road geometry coordinates from OSRM,
+   * falling back to interpolated line waypoints if OSRM is unreachable.
+   */
+  async getRoutePath(
+    origin: Coordinates,
+    destination: Coordinates,
+  ): Promise<Coordinates[]> {
+    const cacheKey = `${origin.lat.toFixed(4)},${origin.lng.toFixed(4)}->${destination.lat.toFixed(4)},${destination.lng.toFixed(4)}`;
+    const cached = this.pathCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    try {
+      const url = `${this.osrmUrl}/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { Accept: 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error(`OSRM HTTP error: status ${response.status}`);
+      }
+
+      interface OsrmGeoJsonResponse {
+        code?: string;
+        routes?: Array<{
+          geometry?: {
+            coordinates?: Array<[number, number]>;
+          };
+        }>;
+      }
+
+      const data = (await response.json()) as OsrmGeoJsonResponse;
+      if (
+        data.code === 'Ok' &&
+        Array.isArray(data.routes) &&
+        data.routes.length > 0 &&
+        data.routes[0]?.geometry?.coordinates &&
+        data.routes[0].geometry.coordinates.length > 0
+      ) {
+        const waypoints: Coordinates[] = data.routes[0].geometry.coordinates.map(
+          ([lng, lat]) => ({ lat, lng }),
+        );
+
+        if (this.pathCache.size > 1000) {
+          const firstKey = this.pathCache.keys().next().value;
+          if (firstKey) this.pathCache.delete(firstKey);
+        }
+        this.pathCache.set(cacheKey, waypoints);
+        return waypoints;
+      }
+
+      throw new Error(`OSRM returned code: ${data.code ?? 'unknown'}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.debug(
+        `OSRM path query failed (${message}). Generating fallback waypoints.`,
+      );
+
+      const count = 5;
+      const fallback: Coordinates[] = [];
+      for (let i = 0; i <= count; i++) {
+        const t = i / count;
+        fallback.push({
+          lat: Number((origin.lat + (destination.lat - origin.lat) * t).toFixed(6)),
+          lng: Number((origin.lng + (destination.lng - origin.lng) * t).toFixed(6)),
+        });
+      }
+      return fallback;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
 }

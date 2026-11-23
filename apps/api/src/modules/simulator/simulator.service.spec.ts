@@ -6,6 +6,7 @@ import { RedisService } from '../../redis/redis.service';
 import { DriversService } from '../drivers/drivers.service';
 import { RequestsService } from '../requests/requests.service';
 import { OfferCascadeService } from '../realtime/cascade/offer-cascade.service';
+import { OsrmService } from '../analytics/osrm.service';
 import { DriverStatus, RequestStatus } from '@fleet-pulse/shared';
 
 describe('SimulatorService (Unit)', () => {
@@ -95,6 +96,14 @@ describe('SimulatorService (Unit)', () => {
       }),
     };
 
+    const mockOsrmService = {
+      getRoutePath: jest.fn().mockResolvedValue([
+        { lat: 12.9716, lng: 77.5946 },
+        { lat: 12.96, lng: 77.6 },
+        { lat: 12.9352, lng: 77.6245 },
+      ]),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SimulatorService,
@@ -104,6 +113,7 @@ describe('SimulatorService (Unit)', () => {
         { provide: RequestsService, useValue: mockRequestsService },
         { provide: OfferCascadeService, useValue: mockOfferCascadeService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: OsrmService, useValue: mockOsrmService },
       ],
     }).compile();
 

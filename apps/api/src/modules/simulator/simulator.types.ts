@@ -1,4 +1,5 @@
 import { Socket } from 'socket.io-client';
+import { Coordinates } from '@fleet-pulse/shared';
 
 export const BENGALURU_BOUNDS = {
   MIN_LAT: 12.834,
@@ -34,6 +35,8 @@ export interface ActiveSimTrip {
   dropLat: number;
   dropLng: number;
   phase: 'to_pickup' | 'to_dropoff';
+  waypoints?: Coordinates[];
+  waypointIndex?: number;
 }
 
 export interface SimDriverAgent {
@@ -48,6 +51,8 @@ export interface SimDriverAgent {
   socket?: Socket;
   currentTrip?: ActiveSimTrip | null;
   lastMovedAt: number;
+  routeWaypoints?: Coordinates[];
+  waypointIndex?: number;
 }
 
 export interface SimulatorConfig {

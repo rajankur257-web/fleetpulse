@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import jwt from 'jsonwebtoken';
 import { Socket, io } from 'socket.io-client';
 import {
+  Coordinates,
   DriverStatus,
   RequestStatus,
   haversineKm,
@@ -16,6 +17,7 @@ import { RedisService } from '../../redis/redis.service';
 import { DriversService } from '../drivers/drivers.service';
 import { RequestsService } from '../requests/requests.service';
 import { OfferCascadeService } from '../realtime/cascade/offer-cascade.service';
+import { OsrmService } from '../analytics/osrm.service';
 import { SeededPRNG } from './prng';
 import {
   BENGALURU_BOUNDS,
@@ -95,6 +97,7 @@ export class SimulatorService implements OnModuleDestroy {
     private readonly requestsService: RequestsService,
     private readonly offerCascadeService: OfferCascadeService,
     private readonly configService: ConfigService,
+    private readonly osrmService: OsrmService,
   ) {}
 
   async onModuleDestroy() {
@@ -294,6 +297,59 @@ export class SimulatorService implements OnModuleDestroy {
   }
 
   /**
+   * Advances a driver along an array of road network waypoints by distanceCoveredKm.
+   * Updates driver.lat, driver.lng, and driver.heading to match the exact road segment.
+   * Returns the new waypointIndex.
+   */
+  private advanceAlongWaypoints(
+    driver: SimDriverAgent,
+    waypoints: Coordinates[],
+    currentIndex: number,
+    distanceCoveredKm: number,
+  ): number {
+    let index = currentIndex;
+    let remainingDistance = distanceCoveredKm;
+
+    while (index < waypoints.length - 1 && remainingDistance > 0) {
+      const nextWp = waypoints[index + 1]!;
+
+      const distToNext = haversineKm(
+        { lat: driver.lat, lng: driver.lng },
+        nextWp,
+      );
+
+      // Set heading to the road segment bearing
+      driver.heading = calculateBearing(
+        driver.lat,
+        driver.lng,
+        nextWp.lat,
+        nextWp.lng,
+      );
+
+      if (distToNext <= remainingDistance) {
+        // Snap to next waypoint and continue with remaining distance
+        driver.lat = nextWp.lat;
+        driver.lng = nextWp.lng;
+        remainingDistance -= distToNext;
+        index++;
+      } else {
+        // Advance partway along the segment
+        const nextPos = movePosition(
+          driver.lat,
+          driver.lng,
+          driver.heading,
+          remainingDistance,
+        );
+        driver.lat = nextPos.lat;
+        driver.lng = nextPos.lng;
+        remainingDistance = 0;
+      }
+    }
+
+    return index;
+  }
+
+  /**
    * Steps driver physics and movement forward by deltaTimeSeconds
    */
   stepMovement(deltaTimeSeconds: number): void {
@@ -304,42 +360,103 @@ export class SimulatorService implements OnModuleDestroy {
       const distanceCoveredKm = effectiveSpeedKmh * distanceFactor;
 
       if (driver.status === 'available') {
-        // Driver wandering: add small random heading drift (-15 deg to +15 deg)
-        driver.heading = (driver.heading + this.prng.range(-15, 15) + 360) % 360;
-
-        const nextPos = movePosition(
-          driver.lat,
-          driver.lng,
-          driver.heading,
-          distanceCoveredKm,
-        );
-
-        // Check city bounding box and bounce heading if hitting boundary
+        // Road-network patrolling between Bengaluru hotspots
         if (
-          nextPos.lat < BENGALURU_BOUNDS.MIN_LAT ||
-          nextPos.lat > BENGALURU_BOUNDS.MAX_LAT ||
-          nextPos.lng < BENGALURU_BOUNDS.MIN_LNG ||
-          nextPos.lng > BENGALURU_BOUNDS.MAX_LNG
+          !driver.routeWaypoints ||
+          driver.waypointIndex === undefined ||
+          driver.waypointIndex >= driver.routeWaypoints.length - 1
         ) {
-          driver.heading = (driver.heading + 180 + this.prng.range(-20, 20) + 360) % 360;
+          const dest = this.pickWeightedHotspot();
+          driver.routeWaypoints = [
+            { lat: driver.lat, lng: driver.lng },
+            { lat: dest.lat, lng: dest.lng },
+          ];
+          driver.waypointIndex = 0;
+
+          this.osrmService
+            .getRoutePath(
+              { lat: driver.lat, lng: driver.lng },
+              { lat: dest.lat, lng: dest.lng },
+            )
+            .then((path) => {
+              if (driver.status === 'available' && path.length > 1) {
+                driver.routeWaypoints = path;
+                driver.waypointIndex = 0;
+              }
+            })
+            .catch(() => {});
+        }
+
+        if (driver.routeWaypoints && driver.routeWaypoints.length > 1) {
+          driver.waypointIndex = this.advanceAlongWaypoints(
+            driver,
+            driver.routeWaypoints,
+            driver.waypointIndex ?? 0,
+            distanceCoveredKm,
+          );
         } else {
-          driver.lat = nextPos.lat;
-          driver.lng = nextPos.lng;
+          // Fallback drift within boundary
+          driver.heading = (driver.heading + this.prng.range(-15, 15) + 360) % 360;
+          const nextPos = movePosition(driver.lat, driver.lng, driver.heading, distanceCoveredKm);
+          if (
+            nextPos.lat < BENGALURU_BOUNDS.MIN_LAT ||
+            nextPos.lat > BENGALURU_BOUNDS.MAX_LAT ||
+            nextPos.lng < BENGALURU_BOUNDS.MIN_LNG ||
+            nextPos.lng > BENGALURU_BOUNDS.MAX_LNG
+          ) {
+            driver.heading = (driver.heading + 180 + 360) % 360;
+          } else {
+            driver.lat = nextPos.lat;
+            driver.lng = nextPos.lng;
+          }
         }
       } else if (driver.status === 'busy' && driver.currentTrip) {
-        // Driver is executing a delivery trip
+        // Driver is executing a delivery trip strictly following road network geometry
         const trip = driver.currentTrip;
         const target =
           trip.phase === 'to_pickup'
             ? { lat: trip.pickupLat, lng: trip.pickupLng }
             : { lat: trip.dropLat, lng: trip.dropLng };
 
+        // Ensure road waypoints are loaded for the current trip phase
+        if (!trip.waypoints || trip.waypoints.length <= 1) {
+          trip.waypoints = [
+            { lat: driver.lat, lng: driver.lng },
+            { lat: target.lat, lng: target.lng },
+          ];
+          trip.waypointIndex = 0;
+
+          this.osrmService
+            .getRoutePath(
+              { lat: driver.lat, lng: driver.lng },
+              target,
+            )
+            .then((path) => {
+              if (driver.currentTrip === trip && path.length > 1) {
+                trip.waypoints = path;
+                trip.waypointIndex = 0;
+              }
+            })
+            .catch(() => {});
+        }
+
+        // Advance along road network waypoints
+        trip.waypointIndex = this.advanceAlongWaypoints(
+          driver,
+          trip.waypoints,
+          trip.waypointIndex ?? 0,
+          distanceCoveredKm,
+        );
+
         const distanceToTarget = haversineKm(
           { lat: driver.lat, lng: driver.lng },
           target,
         );
 
-        if (distanceToTarget <= Math.max(0.05, distanceCoveredKm)) {
+        if (
+          trip.waypointIndex >= trip.waypoints.length - 1 ||
+          distanceToTarget <= Math.max(0.05, distanceCoveredKm)
+        ) {
           // Arrived at target!
           driver.lat = target.lat;
           driver.lng = target.lng;
@@ -347,6 +464,23 @@ export class SimulatorService implements OnModuleDestroy {
           if (trip.phase === 'to_pickup') {
             // Picked up! Transition to dropoff phase
             trip.phase = 'to_dropoff';
+            trip.waypoints = undefined;
+            trip.waypointIndex = 0;
+
+            // Pre-fetch road route to dropoff
+            this.osrmService
+              .getRoutePath(
+                { lat: trip.pickupLat, lng: trip.pickupLng },
+                { lat: trip.dropLat, lng: trip.dropLng },
+              )
+              .then((path) => {
+                if (driver.currentTrip === trip && path.length > 1) {
+                  trip.waypoints = path;
+                  trip.waypointIndex = 0;
+                }
+              })
+              .catch(() => {});
+
             this.prisma.deliveryRequest
               .update({
                 where: { id: trip.requestId },
@@ -378,24 +512,10 @@ export class SimulatorService implements OnModuleDestroy {
 
             driver.status = 'available';
             driver.currentTrip = null;
+            driver.routeWaypoints = undefined;
+            driver.waypointIndex = undefined;
             this.stats.requestsCompleted++;
           }
-        } else {
-          // Move toward target along bearing
-          driver.heading = calculateBearing(
-            driver.lat,
-            driver.lng,
-            target.lat,
-            target.lng,
-          );
-          const nextPos = movePosition(
-            driver.lat,
-            driver.lng,
-            driver.heading,
-            distanceCoveredKm,
-          );
-          driver.lat = nextPos.lat;
-          driver.lng = nextPos.lng;
         }
       }
 
@@ -474,7 +594,27 @@ export class SimulatorService implements OnModuleDestroy {
           dropLat: requestCoords.dropLat,
           dropLng: requestCoords.dropLng,
           phase: 'to_pickup',
+          waypoints: [
+            { lat: driver.lat, lng: driver.lng },
+            { lat: requestCoords.pickupLat, lng: requestCoords.pickupLng },
+          ],
+          waypointIndex: 0,
         };
+
+        // Fetch turn-by-turn road network route to pickup
+        this.osrmService
+          .getRoutePath(
+            { lat: driver.lat, lng: driver.lng },
+            { lat: requestCoords.pickupLat, lng: requestCoords.pickupLng },
+          )
+          .then((path) => {
+            if (driver.currentTrip && driver.currentTrip.phase === 'to_pickup' && path.length > 1) {
+              driver.currentTrip.waypoints = path;
+              driver.currentTrip.waypointIndex = 0;
+            }
+          })
+          .catch(() => {});
+
         this.stats.requestsAssigned++;
         this.logger.log(`[SIM] Driver ${driverId} accepted request ${requestId}`);
       } catch (err: unknown) {

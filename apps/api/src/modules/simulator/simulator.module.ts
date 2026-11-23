@@ -7,12 +7,14 @@ import { RedisModule } from '../../redis/redis.module';
 import { DriversModule } from '../drivers/drivers.module';
 import { RequestsModule } from '../requests/requests.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
     RedisModule,
+    AnalyticsModule,
     forwardRef(() => DriversModule),
     forwardRef(() => RequestsModule),
     forwardRef(() => RealtimeModule),
