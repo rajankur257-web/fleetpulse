@@ -24,6 +24,13 @@ export function SidePanel({
   const [activeTab, setActiveTab] = useState<'requests' | 'drivers'>('requests');
   const [collapsed, setCollapsed] = useState(false);
 
+  React.useEffect(() => {
+    if (selectedDriverId) {
+      setActiveTab('drivers');
+      setCollapsed(false);
+    }
+  }, [selectedDriverId]);
+
   const pendingCount = requests.filter(
     (r) => r.status === 'pending' || r.status === 'offered' || r.status === 'assigned',
   ).length;

@@ -104,6 +104,21 @@ export const REAL_DRIVER_NAMES = [
   'Venkatesh Prasad',
   'Prashant Kumar',
   'Arun Menon',
+  'Rohit Verma',
+  'Manoj Tiwari',
+  'Kiran Kumar',
+  'Pradeep Shenoy',
+  'Dinesh Gowda',
+  'Siddharth Hegde',
+  'Abhishek Bhat',
+  'Varun Rao',
+  'Suraj Nair',
+  'Hemant Deshmukh',
+  'Alok Pandey',
+  'Gautam Sen',
+  'Tarun Kulkarni',
+  'Sachin Joshi',
+  'Ajay Reddy',
 ];
 
 /**
@@ -158,13 +173,32 @@ export function getNeighborhoodName(lat: number, lng: number): string {
 }
 
 /**
- * Format driver name: transforms any generic 'Sim Driver' into a real driver name.
+ * Format driver name: transforms any generic 'Sim Driver' or test name into a real driver name.
  */
 export function getFormattedDriverName(driverName?: string | null, driverId?: string | null): string {
-  if (driverName && !driverName.startsWith('Sim Driver')) {
+  if (
+    driverName &&
+    !driverName.toLowerCase().includes('sim') &&
+    !driverName.toLowerCase().includes('supertest') &&
+    !driverName.toLowerCase().includes('test')
+  ) {
     return driverName;
   }
   const seed = driverId || driverName || 'default-driver';
   const hash = hashString(seed);
   return REAL_DRIVER_NAMES[hash % REAL_DRIVER_NAMES.length]!;
+}
+
+/**
+ * Format driver phone: transforms dummy sim phones like +919900001089 into realistic mobile numbers.
+ */
+export function getFormattedDriverPhone(phone?: string | null, driverId?: string | null): string {
+  if (phone && !phone.startsWith('+91990000') && !phone.startsWith('+91998877')) {
+    return phone;
+  }
+  const seed = (driverId || phone || 'driver') + '-phone';
+  const hash = hashString(seed);
+  const part1 = 98100 + (hash % 899);
+  const part2 = 10000 + ((hash >> 3) % 89999);
+  return `+91 ${part1} ${part2}`;
 }

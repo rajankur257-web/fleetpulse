@@ -7,6 +7,7 @@ import { STATUS_COLORS } from '../../lib/constants';
 import {
   getCustomerName,
   getFormattedDriverName,
+  getFormattedDriverPhone,
   getNeighborhoodName,
 } from '../../lib/order-metadata';
 
@@ -131,7 +132,7 @@ export function DriversList({
                 <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
                   <div className="flex items-center gap-1">
                     <Phone className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                    <span className="font-mono">{driver.phone}</span>
+                    <span className="font-mono">{getFormattedDriverPhone(driver.phone, driver.id)}</span>
                   </div>
                   {driver.speed !== undefined && (
                     <div className="flex items-center gap-1 text-slate-500 font-mono">

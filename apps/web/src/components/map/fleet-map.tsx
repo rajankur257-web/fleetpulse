@@ -11,8 +11,53 @@ import { createRequestPinElement } from './request-pin';
 import {
   getCustomerName,
   getFormattedDriverName,
+  getFormattedDriverPhone,
   getNeighborhoodName,
 } from '../../lib/order-metadata';
+import { STATUS_COLORS } from '../../lib/constants';
+
+function buildDriverPopupHtml(
+  driver: DriverMarkerData,
+  displayName: string,
+  requests: DeliveryRequestData[],
+): string {
+  const phone = getFormattedDriverPhone(driver.phone, driver.id);
+  const color = STATUS_COLORS[driver.status] || STATUS_COLORS.offline;
+  const area = getNeighborhoodName(driver.lat, driver.lng);
+
+  let tripInfo = `<span class="text-emerald-500 font-semibold">Available</span> in <span class="font-medium text-slate-800 dark:text-slate-200">${area}</span>`;
+  if (driver.activeRequestId) {
+    const cust = getCustomerName(driver.activeRequestId);
+    const matched = requests.find((r) => r.id === driver.activeRequestId);
+    const dropArea = matched ? getNeighborhoodName(matched.dropLat, matched.dropLng) : area;
+    tripInfo = `<div class="text-amber-500 font-medium">Delivering to ${cust}</div><div class="text-slate-400 text-[10px]">Drop: ${dropArea} • #${driver.activeRequestId.slice(0, 6)}</div>`;
+  }
+
+  return `
+    <div class="p-3 min-w-[210px] text-xs font-sans bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg shadow-xl border border-slate-200 dark:border-slate-800">
+      <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800/80">
+        <div class="flex items-center gap-1.5 font-bold text-sm text-slate-900 dark:text-white">
+          <span class="w-2 h-2 rounded-full ${color.bg}"></span>
+          <span>${displayName}</span>
+        </div>
+        <span class="text-amber-500 font-mono text-[11px] font-semibold">★ ${driver.rating.toFixed(1)}</span>
+      </div>
+      <div class="pt-2 space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400">Mobile:</span>
+          <span class="font-mono font-medium text-slate-700 dark:text-slate-200">${phone}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400">Speed:</span>
+          <span class="font-mono">${driver.speed ?? 0} km/h</span>
+        </div>
+        <div class="pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
+          ${tripInfo}
+        </div>
+      </div>
+    </div>
+  `;
+}
 
 interface FleetMapProps {
   drivers: DriverMarkerData[];
@@ -27,6 +72,7 @@ interface FleetMapProps {
 export function FleetMap({
   drivers,
   requests,
+  selectedDriverId,
   onSelectDriver,
   pickingMode,
   onMapClickCoordinate,
@@ -38,6 +84,15 @@ export function FleetMap({
   const [showDemandHeatmap, setShowDemandHeatmap] = useState(false);
   const driverMarkersRef = useRef<Map<string, Marker>>(new Map());
   const requestMarkersRef = useRef<Map<string, { pickup: Marker; dropoff: Marker }>>(new Map());
+
+  // Automatically reveal driver popup when selected
+  useEffect(() => {
+    if (!selectedDriverId) return;
+    const marker = driverMarkersRef.current.get(selectedDriverId);
+    if (marker && !marker.getPopup()?.isOpen()) {
+      marker.togglePopup();
+    }
+  }, [selectedDriverId]);
 
   // Initialize MapLibre GL JS map instance
   useEffect(() => {
@@ -103,14 +158,24 @@ export function FleetMap({
           displayName,
           driver.speed,
         );
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          onSelectDriver(driver);
-        });
+        const popup = new maplibregl.Popup({
+          offset: 18,
+          closeButton: true,
+          closeOnClick: false,
+          className: 'fleet-driver-popup',
+        }).setHTML(buildDriverPopupHtml(driver, displayName, requests));
 
         marker = new maplibregl.Marker({ element: el })
           .setLngLat([driver.lng, driver.lat])
+          .setPopup(popup)
           .addTo(map);
+
+        const currentMarker = marker;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onSelectDriver(driver);
+          currentMarker.togglePopup();
+        });
 
         driverMarkersRef.current.set(driver.id, marker);
       } else {
@@ -120,8 +185,14 @@ export function FleetMap({
           marker.getElement(),
           driver.status,
           driver.heading,
+          displayName,
           driver.speed,
         );
+
+        const existingPopup = marker.getPopup();
+        if (existingPopup) {
+          existingPopup.setHTML(buildDriverPopupHtml(driver, displayName, requests));
+        }
       }
     }
 

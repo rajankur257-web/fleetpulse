@@ -667,11 +667,14 @@ export class SimulatorService implements OnModuleDestroy {
         const lng = hub.lng + this.prng.range(-0.01, 0.01);
         const nameIdx = (driversToUse.length + i - 1) % REAL_DRIVER_NAMES.length;
         const driverName = REAL_DRIVER_NAMES[nameIdx]!;
+        const phonePrefix = 98100 + ((driversToUse.length + i) % 899);
+        const phoneSuffix = 10000 + (((driversToUse.length + i) * 7919) % 89999);
+        const phone = `+91 ${phonePrefix} ${phoneSuffix}`;
 
         const newDriver = await this.prisma.driver.create({
           data: {
             name: driverName,
-            phone: `+91990000${(1000 + driversToUse.length + i).toString()}`,
+            phone: phone,
             status: DriverStatus.AVAILABLE,
             rating: Math.round(this.prng.range(4.2, 5.0) * 10) / 10,
             lat,

@@ -48,6 +48,7 @@ export function updateDriverMarkerElement(
   el: HTMLElement,
   status: DriverStatus,
   heading: number,
+  name?: string,
   speed?: number,
 ): void {
   const color = STATUS_COLORS[status] || STATUS_COLORS.offline;
@@ -59,6 +60,11 @@ export function updateDriverMarkerElement(
   const svg = el.querySelector('svg') as HTMLElement | null;
   if (svg) {
     svg.style.transform = `rotate(${heading}deg)`;
+  }
+
+  const nameSpan = el.querySelector('.font-medium') as HTMLElement | null;
+  if (nameSpan && name) {
+    nameSpan.textContent = name;
   }
 
   const speedSpan = el.querySelector('.text-slate-400') as HTMLElement | null;
