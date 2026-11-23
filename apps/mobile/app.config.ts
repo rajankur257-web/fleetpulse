@@ -1,0 +1,53 @@
+import { ExpoConfig, ConfigContext } from 'expo/config';
+
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
+  name: 'Fleet Pulse Driver',
+  slug: 'fleet-pulse-driver',
+  version: '0.1.0',
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  userInterfaceStyle: 'dark',
+  scheme: 'fleetpulse',
+  splash: {
+    resizeMode: 'contain',
+    backgroundColor: '#020617',
+  },
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: 'com.fleetpulse.driver',
+    infoPlist: {
+      UIBackgroundModes: ['location', 'fetch'],
+    },
+  },
+  android: {
+    adaptiveIcon: {
+      backgroundColor: '#020617',
+    },
+    package: 'com.fleetpulse.driver',
+    permissions: [
+      'ACCESS_FINE_LOCATION',
+      'ACCESS_COARSE_LOCATION',
+      'ACCESS_BACKGROUND_LOCATION',
+      'FOREGROUND_SERVICE',
+      'FOREGROUND_SERVICE_LOCATION',
+    ],
+  },
+  plugins: [
+    'expo-router',
+    [
+      'expo-location',
+      {
+        locationAlwaysAndWhenInUsePermission:
+          'Allow Fleet Pulse to track your delivery vehicle location in real-time.',
+      },
+    ],
+  ],
+  extra: {
+    apiUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001',
+    socketUrl: process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    eas: {
+      projectId: 'fleet-pulse-driver-eas-id',
+    },
+  },
+});
