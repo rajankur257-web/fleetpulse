@@ -261,7 +261,7 @@ export function FleetMap({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium shadow-md backdrop-blur border transition ${
             showDemandHeatmap
               ? 'bg-rose-600/90 text-white border-rose-500'
-              : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:text-white'
+              : 'bg-white/95 text-slate-700 border-slate-200 hover:text-slate-900 hover:bg-white shadow-sm dark:bg-slate-900/90 dark:text-slate-300 dark:border-slate-700 dark:hover:text-white'
           }`}
           title="Toggle Demand Heatmap overlay"
         >

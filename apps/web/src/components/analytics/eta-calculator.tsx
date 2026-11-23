@@ -53,17 +53,17 @@ export function EtaCalculator() {
   };
 
   return (
-    <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+    <div className="rounded-xl bg-white border border-slate-200 dark:bg-slate-900/90 dark:border-slate-800 p-5 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400">
             <Route className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-100">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Haversine Distance vs OSRM Road ETA
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400">
               Direct spherical Haversine formula compared against OSRM street network routing
             </p>
           </div>
@@ -75,7 +75,7 @@ export function EtaCalculator() {
             <button
               key={p.name}
               onClick={() => handleSelectPreset(p)}
-              className="text-[11px] font-medium px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+              className="text-[11px] font-medium px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 dark:text-slate-300 transition"
             >
               {p.name.split(' to ')[0]} → {p.name.split(' to ')[1]}
             </button>
@@ -85,9 +85,9 @@ export function EtaCalculator() {
 
       {/* Input Coordinates */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 text-xs">
-        <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
-          <div className="flex items-center gap-1.5 text-slate-300 font-medium mb-2">
-            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800/60 dark:border-slate-700/60">
+          <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium mb-2">
+            <MapPin className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
             <span>Origin Coordinates (Pickup)</span>
           </div>
           <div className="grid grid-cols-2 gap-2 font-mono">
@@ -96,7 +96,7 @@ export function EtaCalculator() {
               step="0.0001"
               value={origin.lat}
               onChange={(e) => setOrigin({ ...origin, lat: Number(e.target.value) })}
-              className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none"
+              className="px-2 py-1 rounded bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
               placeholder="Latitude"
             />
             <input
@@ -104,15 +104,15 @@ export function EtaCalculator() {
               step="0.0001"
               value={origin.lng}
               onChange={(e) => setOrigin({ ...origin, lng: Number(e.target.value) })}
-              className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none"
+              className="px-2 py-1 rounded bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
               placeholder="Longitude"
             />
           </div>
         </div>
 
-        <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
-          <div className="flex items-center gap-1.5 text-slate-300 font-medium mb-2">
-            <MapPin className="w-3.5 h-3.5 text-blue-400" />
+        <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800/60 dark:border-slate-700/60">
+          <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium mb-2">
+            <MapPin className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
             <span>Destination Coordinates (Dropoff)</span>
           </div>
           <div className="grid grid-cols-2 gap-2 font-mono">
@@ -121,7 +121,7 @@ export function EtaCalculator() {
               step="0.0001"
               value={destination.lat}
               onChange={(e) => setDestination({ ...destination, lat: Number(e.target.value) })}
-              className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none"
+              className="px-2 py-1 rounded bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-blue-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
               placeholder="Latitude"
             />
             <input
@@ -129,7 +129,7 @@ export function EtaCalculator() {
               step="0.0001"
               value={destination.lng}
               onChange={(e) => setDestination({ ...destination, lng: Number(e.target.value) })}
-              className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none"
+              className="px-2 py-1 rounded bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-blue-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
               placeholder="Longitude"
             />
           </div>
@@ -149,50 +149,50 @@ export function EtaCalculator() {
 
       {/* Comparison Results Card */}
       {result && (
-        <div className="mt-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
-          <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
-            <span className="text-[10px] text-slate-400 block uppercase tracking-wider">
+        <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-800/50 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+          <div className="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/80 dark:border-slate-800">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
               Haversine (Great-Circle)
             </span>
-            <div className="text-lg font-bold text-slate-100 mt-1">
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">
               {result.haversine.distanceKm.toFixed(2)} km
             </div>
-            <div className="text-[11px] text-emerald-400 mt-0.5">
+            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
               ETA: ~{result.haversine.etaMinutes} min (30 km/h)
             </div>
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+          <div className="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/80 dark:border-slate-800">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 block uppercase tracking-wider">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
                 OSRM Street Route
               </span>
               <span
-                className={`text-[9px] px-1.5 py-0.2 rounded ${
+                className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
                   result.osrm.isAvailable
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : 'bg-amber-500/20 text-amber-300'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-300'
                 }`}
               >
                 {result.osrm.isAvailable ? 'LIVE OSRM' : 'FALLBACK'}
               </span>
             </div>
-            <div className="text-lg font-bold text-slate-100 mt-1">
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">
               {result.osrm.distanceKm.toFixed(2)} km
             </div>
-            <div className="text-[11px] text-blue-400 mt-0.5">
+            <div className="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5">
               Duration: ~{result.osrm.durationMinutes} min
             </div>
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 flex flex-col justify-between">
-            <span className="text-[10px] text-slate-400 block uppercase tracking-wider">
+          <div className="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/80 dark:border-slate-800 flex flex-col justify-between">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
               Urban Detour Factor
             </span>
-            <div className="text-lg font-bold text-cyan-400 mt-1">
+            <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400 mt-1">
               {result.detourFactor.toFixed(2)}x
             </div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-slate-500 dark:text-slate-400">
               Road detour ratio vs straight line
             </div>
           </div>

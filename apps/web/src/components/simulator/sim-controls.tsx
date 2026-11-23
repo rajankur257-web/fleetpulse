@@ -74,23 +74,23 @@ export function SimControls({ isVisible, onClose }: SimControlsProps) {
   return (
     <div
       data-testid="sim-controls-panel"
-      className="absolute bottom-6 left-6 z-40 bg-slate-950/95 backdrop-blur border border-slate-800 rounded-xl p-4 shadow-2xl w-80 text-xs text-slate-200 flex flex-col gap-3"
+      className="absolute bottom-6 left-6 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xl w-80 text-xs text-slate-800 dark:text-slate-200 flex flex-col gap-3"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
         <div className="flex items-center gap-2">
           <span
             className={`w-2.5 h-2.5 rounded-full ${
-              running ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'
+              running ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-600'
             }`}
           />
-          <h4 className="font-bold tracking-wide uppercase text-slate-100 text-[11px]">
+          <h4 className="font-bold tracking-wide uppercase text-slate-900 dark:text-slate-100 text-[11px]">
             Simulator Controller
           </h4>
         </div>
         <button
           onClick={onClose}
-          className="p-1 rounded text-slate-400 hover:text-slate-100 transition"
+          className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 transition"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -98,22 +98,22 @@ export function SimControls({ isVisible, onClose }: SimControlsProps) {
 
       {/* Real-time stats if active */}
       {running && (
-        <div className="grid grid-cols-3 gap-1.5 p-2 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-center">
+        <div className="grid grid-cols-3 gap-1.5 p-2 rounded bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 font-mono text-[10px] text-center">
           <div>
-            <div className="text-slate-500">Created</div>
-            <div className="font-semibold text-blue-400">{stats.requestsCreated ?? 0}</div>
+            <div className="text-slate-500 dark:text-slate-500">Created</div>
+            <div className="font-semibold text-blue-600 dark:text-blue-400">{stats.requestsCreated ?? 0}</div>
           </div>
           <div>
-            <div className="text-slate-500">Assigned</div>
-            <div className="font-semibold text-amber-400">{stats.requestsAssigned ?? 0}</div>
+            <div className="text-slate-500 dark:text-slate-500">Assigned</div>
+            <div className="font-semibold text-amber-600 dark:text-amber-400">{stats.requestsAssigned ?? 0}</div>
           </div>
           <div>
-            <div className="text-slate-500">Completed</div>
-            <div className="font-semibold text-emerald-400">{stats.requestsCompleted ?? 0}</div>
+            <div className="text-slate-500 dark:text-slate-500">Completed</div>
+            <div className="font-semibold text-emerald-600 dark:text-emerald-400">{stats.requestsCompleted ?? 0}</div>
           </div>
-          <div className="col-span-3 pt-1 border-t border-slate-800 flex justify-between px-1">
-            <span className="text-slate-500">Double Assigns:</span>
-            <span className="text-emerald-400 font-bold">{stats.doubleAssignmentsDetected ?? 0}</span>
+          <div className="col-span-3 pt-1 border-t border-slate-200 dark:border-slate-800 flex justify-between px-1">
+            <span className="text-slate-500 dark:text-slate-500">Double Assigns:</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">{stats.doubleAssignmentsDetected ?? 0}</span>
           </div>
         </div>
       )}
@@ -121,11 +121,11 @@ export function SimControls({ isVisible, onClose }: SimControlsProps) {
       {/* Sliders */}
       <div className="space-y-2">
         <div>
-          <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+          <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-400 mb-1">
             <span className="flex items-center gap-1">
               <Users className="w-3 h-3" /> Drivers
             </span>
-            <span className="font-mono text-slate-200">{driverCount}</span>
+            <span className="font-mono text-slate-900 dark:text-slate-200">{driverCount}</span>
           </div>
           <input
             type="range"
@@ -135,16 +135,16 @@ export function SimControls({ isVisible, onClose }: SimControlsProps) {
             disabled={running}
             value={driverCount}
             onChange={(e) => setDriverCount(Number(e.target.value))}
-            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-50"
+            className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:opacity-50"
           />
         </div>
 
         <div>
-          <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+          <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-400 mb-1">
             <span className="flex items-center gap-1">
               <Gauge className="w-3 h-3" /> Speed Multiplier
             </span>
-            <span className="font-mono text-slate-200">{speedMultiplier}x</span>
+            <span className="font-mono text-slate-900 dark:text-slate-200">{speedMultiplier}x</span>
           </div>
           <input
             type="range"
@@ -154,16 +154,16 @@ export function SimControls({ isVisible, onClose }: SimControlsProps) {
             disabled={running}
             value={speedMultiplier}
             onChange={(e) => setSpeedMultiplier(Number(e.target.value))}
-            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500 disabled:opacity-50"
+            className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500 disabled:opacity-50"
           />
         </div>
 
         <div>
-          <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+          <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-400 mb-1">
             <span className="flex items-center gap-1">
               <Activity className="w-3 h-3" /> Rate (req/min)
             </span>
-            <span className="font-mono text-slate-200">{requestRate}</span>
+            <span className="font-mono text-slate-900 dark:text-slate-200">{requestRate}</span>
           </div>
           <input
             type="range"
@@ -173,7 +173,7 @@ export function SimControls({ isVisible, onClose }: SimControlsProps) {
             disabled={running}
             value={requestRate}
             onChange={(e) => setRequestRate(Number(e.target.value))}
-            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 disabled:opacity-50"
+            className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 disabled:opacity-50"
           />
         </div>
       </div>

@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 :root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+.dark {
   --background: #020617;
   --foreground: #f8fafc;
+}
+
+/* Dark mode map tile styling for OpenStreetMap canvas (markers remain unaffected) */
+.dark .maplibregl-canvas {
+  filter: invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%);
 }

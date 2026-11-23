@@ -271,18 +271,18 @@ export function DemandHeatmapMap({
   }, [flyToCoords]);
 
   return (
-    <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+    <div className="rounded-xl bg-white border border-slate-200 dark:bg-slate-900/90 dark:border-slate-800 p-5 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
+            <div className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 dark:text-rose-400">
               <Flame className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-semibold text-slate-100">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Demand Heatmap & Idle Repositioning Map
             </h3>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
             Real-time delivery demand density, dead-zone alert rings, and directional repositioning vectors
           </p>
         </div>
@@ -293,8 +293,8 @@ export function DemandHeatmapMap({
             onClick={() => setShowHeatmap(!showHeatmap)}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-md border font-medium transition ${
               showHeatmap
-                ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                : 'bg-slate-800 text-slate-400 border-slate-700'
+                ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40'
+                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
             }`}
           >
             <Flame className="w-3 h-3" />
@@ -305,8 +305,8 @@ export function DemandHeatmapMap({
             onClick={() => setShowHints(!showHints)}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-md border font-medium transition ${
               showHints
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                : 'bg-slate-800 text-slate-400 border-slate-700'
+                ? 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40'
+                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
             }`}
           >
             <Compass className="w-3 h-3" />
@@ -317,8 +317,8 @@ export function DemandHeatmapMap({
             onClick={() => setShowDeadZones(!showDeadZones)}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-md border font-medium transition ${
               showDeadZones
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'bg-slate-800 text-slate-400 border-slate-700'
+                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40'
+                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
             }`}
           >
             <AlertTriangle className="w-3 h-3" />
@@ -328,7 +328,7 @@ export function DemandHeatmapMap({
       </div>
 
       {/* Map Container */}
-      <div className="relative w-full h-[420px] mt-4 rounded-lg overflow-hidden border border-slate-800">
+      <div className="relative w-full h-[420px] mt-4 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
         <div
           ref={mapContainerRef}
           data-testid="analytics-demand-map"
@@ -336,22 +336,22 @@ export function DemandHeatmapMap({
         />
 
         {/* Map Legend Overlay */}
-        <div className="absolute top-3 left-3 bg-slate-950/85 backdrop-blur border border-slate-800 rounded-lg p-2.5 text-[10px] font-mono shadow-xl flex flex-col gap-1.5 z-10">
-          <div className="text-[11px] font-sans font-semibold text-slate-200 flex items-center gap-1">
-            <Layers className="w-3 h-3 text-indigo-400" />
+        <div className="absolute top-3 left-3 bg-white/90 border border-slate-200 text-slate-800 dark:bg-slate-950/85 backdrop-blur dark:border-slate-800 rounded-lg p-2.5 text-[10px] font-mono shadow-xl flex flex-col gap-1.5 z-10">
+          <div className="text-[11px] font-sans font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-1">
+            <Layers className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
             <span>Map Layers</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-1.5 rounded-sm bg-gradient-to-r from-blue-400 via-orange-400 to-red-600 inline-block" />
-            <span className="text-slate-300">Demand Heatmap ({heatmapPoints.length} clusters)</span>
+            <span className="text-slate-700 dark:text-slate-300">Demand Heatmap ({heatmapPoints.length} clusters)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
-            <span className="text-slate-300">Reposition Hint</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 dark:bg-cyan-400 inline-block" />
+            <span className="text-slate-700 dark:text-slate-300">Reposition Hint</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-500 inline-block animate-ping" />
-            <span className="text-slate-300">Dead Zone Alert</span>
+            <span className="text-slate-700 dark:text-slate-300">Dead Zone Alert</span>
           </div>
         </div>
       </div>

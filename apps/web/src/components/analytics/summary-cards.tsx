@@ -22,7 +22,7 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="h-24 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse"
+            className="h-24 rounded-xl bg-slate-100 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 animate-pulse"
           />
         ))}
       </div>
@@ -87,10 +87,10 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
         return (
           <div
             key={kpi.title}
-            className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm flex flex-col justify-between"
+            className="p-3.5 rounded-xl bg-white border border-slate-200 dark:bg-slate-900/90 dark:border-slate-800 shadow-sm flex flex-col justify-between"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 {kpi.title}
               </span>
               <div className={`p-1.5 rounded-lg border ${kpi.bg} ${kpi.color}`}>
@@ -98,10 +98,10 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
               </div>
             </div>
             <div className="mt-2">
-              <div className="text-xl font-bold font-mono tracking-tight text-slate-100">
+              <div className="text-xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100">
                 {kpi.value}
               </div>
-              <div className="text-[10px] text-slate-400 truncate mt-0.5">
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {kpi.subtitle}
               </div>
             </div>
