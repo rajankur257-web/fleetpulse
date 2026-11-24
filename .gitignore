@@ -36,3 +36,7 @@ playwright-report
 # Docker volumes / local data
 postgres_data
 redis_data
+
+# Local scratch & artifacts
+scratch/
+
