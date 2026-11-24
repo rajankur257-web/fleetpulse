@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Clock, Navigation, Package, User } from 'lucide-react';
+import { ArrowRight, Clock, ExternalLink, Navigation, Package, Share2, User } from 'lucide-react';
 import { DeliveryRequestData, DriverMarkerData } from '../../types/dashboard';
 import { REQUEST_STATUS_COLORS } from '../../lib/constants';
 import {
@@ -27,6 +27,7 @@ export function RequestsQueue({
   selectedDriverId,
 }: RequestsQueueProps) {
   const [filter, setFilter] = useState<'all' | 'pending' | 'active' | 'delivered'>('all');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const driverMap = useMemo(() => {
     const map = new Map<string, DriverMarkerData>();
@@ -224,6 +225,38 @@ export function RequestsQueue({
                   ) : (
                     <span className="text-slate-400 dark:text-slate-500 font-sans italic">Unassigned</span>
                   )}
+                </div>
+
+                {/* Customer Private Tracking Link Action */}
+                <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                      const trackingUrl = `${origin}/track/${req.id}`;
+                      navigator.clipboard.writeText(trackingUrl);
+                      setCopiedId(req.id);
+                      setTimeout(() => setCopiedId(null), 2500);
+                    }}
+                    className="flex-1 py-1 px-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-semibold text-[10px] flex items-center justify-center gap-1.5 transition"
+                    title="Copy private tracking link for customer"
+                  >
+                    <Share2 className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                    <span>{copiedId === req.id ? '✓ Copied Link!' : 'Share Customer Link'}</span>
+                  </button>
+
+                  <a
+                    href={`/track/${req.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="py-1 px-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-medium text-[10px] flex items-center gap-1 transition"
+                    title="Preview Customer Tracking Page"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>View</span>
+                  </a>
                 </div>
               </div>
             );

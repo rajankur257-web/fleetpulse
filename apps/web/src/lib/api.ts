@@ -26,6 +26,18 @@ export async function fetchRequests(): Promise<DeliveryRequestData[]> {
   }
 }
 
+export async function fetchRequestById(
+  id: string,
+): Promise<(DeliveryRequestData & { assignedDriver?: DriverMarkerData | null }) | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/requests/${id}`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function createDeliveryRequest(
   data: CreateRequestFormData,
 ): Promise<DeliveryRequestData | null> {
