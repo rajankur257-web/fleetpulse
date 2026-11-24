@@ -158,11 +158,15 @@ async function main() {
   console.log('Seeding completed successfully!');
 }
 
-main()
-  .catch((e) => {
+async function run() {
+  try {
+    await main();
+  } catch (e) {
     console.error('Seeding error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
+    process.exitCode = 1;
+  } finally {
     await prisma.$disconnect();
-  });
+  }
+}
+
+void run();
