@@ -38,24 +38,28 @@ async function main() {
   console.log('Seeding Fleet Pulse database with Bengaluru fleet data...');
 
   // 1. Create Default Users (Admin, Dispatcher)
+  // Default password: Admin@123456
+  const DEFAULT_PASSWORD_HASH =
+    '$argon2id$v=19$m=65536,t=3,p=4$uvSkNr76jR4oL3NtV1LC/w$E7Ey5UiAI0sx80SoZXny9WEYS0Bgi9FbhD/klV3kj1c';
+
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@fleetpulse.com' },
-    update: {},
+    update: { passwordHash: DEFAULT_PASSWORD_HASH },
     create: {
       email: 'admin@fleetpulse.com',
       name: 'System Admin',
-      passwordHash: '$argon2id$v=19$m=65536,t=3,p=4$dummyhashforseedonly',
+      passwordHash: DEFAULT_PASSWORD_HASH,
       role: UserRole.admin,
     },
   });
 
   const dispatcherUser = await prisma.user.upsert({
     where: { email: 'dispatcher@fleetpulse.com' },
-    update: {},
+    update: { passwordHash: DEFAULT_PASSWORD_HASH },
     create: {
       email: 'dispatcher@fleetpulse.com',
       name: 'Central Dispatcher',
-      passwordHash: '$argon2id$v=19$m=65536,t=3,p=4$dummyhashforseedonly',
+      passwordHash: DEFAULT_PASSWORD_HASH,
       role: UserRole.dispatcher,
     },
   });

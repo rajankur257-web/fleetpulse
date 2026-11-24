@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   Optional,
   forwardRef,
@@ -10,16 +11,22 @@ import { DeliveryRequest, RequestStatus } from '@prisma/client';
 import { DeliveryRequest as SharedDeliveryRequest } from '@fleet-pulse/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EventsGateway } from '../realtime/events.gateway';
+import { OfferCascadeService } from '../realtime/cascade/offer-cascade.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 
 @Injectable()
 export class RequestsService {
+  private readonly logger = new Logger(RequestsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Optional()
     @Inject(forwardRef(() => EventsGateway))
     private readonly eventsGateway?: EventsGateway,
+    @Optional()
+    @Inject(forwardRef(() => OfferCascadeService))
+    private readonly offerCascadeService?: OfferCascadeService,
   ) {}
 
   async create(dto: CreateRequestDto): Promise<DeliveryRequest> {
@@ -50,6 +57,13 @@ export class RequestsService {
     if (this.eventsGateway) {
       this.eventsGateway.broadcastRequestCreated({
         request: request as unknown as SharedDeliveryRequest,
+      });
+    }
+
+    if (this.offerCascadeService) {
+      this.offerCascadeService.startCascade(request.id).catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Could not start offer cascade for request ${request.id}: ${msg}`);
       });
     }
 
