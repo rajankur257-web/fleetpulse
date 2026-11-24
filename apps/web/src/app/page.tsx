@@ -268,6 +268,9 @@ export default function DispatcherDashboardPage() {
           selectedDriverId={selectedDriverId}
           onSelectDriver={(d) => {
             setSelectedDriverId(d ? d.id : null);
+            if (d) {
+              setFlyToCoords({ lat: d.lat, lng: d.lng });
+            }
           }}
           onFlyTo={(coords) => setFlyToCoords(coords)}
         />
@@ -279,6 +282,9 @@ export default function DispatcherDashboardPage() {
           selectedDriverId={selectedDriverId}
           onSelectDriver={(d) => {
             setSelectedDriverId(d ? d.id : null);
+            if (d) {
+              setFlyToCoords({ lat: d.lat, lng: d.lng });
+            }
           }}
           pickingMode={pickingMode}
           onMapClickCoordinate={handleMapClickCoordinate}

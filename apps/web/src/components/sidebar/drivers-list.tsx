@@ -114,7 +114,7 @@ export function DriversList({
                 }}
                 className={`p-2.5 rounded-lg border transition cursor-pointer flex flex-col gap-1.5 text-xs ${
                   isSelected
-                    ? 'bg-emerald-50/80 border-emerald-500/80 shadow-sm ring-1 ring-emerald-500/30 dark:bg-slate-800/90 dark:border-emerald-500/60 dark:shadow-md'
+                    ? 'bg-amber-50/70 border-amber-400 shadow-md ring-2 ring-amber-400/40 dark:bg-slate-800/90 dark:border-amber-400/70'
                     : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 dark:bg-slate-900/70 dark:border-slate-800/80 dark:hover:bg-slate-800/60 dark:hover:border-slate-700'
                 }`}
               >
@@ -122,6 +122,11 @@ export function DriversList({
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${color.bg}`} />
                     <span className="font-semibold text-slate-900 dark:text-slate-100">{displayName}</span>
+                    {driver.activeRequestId && (
+                      <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40 text-[9px] font-bold uppercase tracking-wider">
+                        📦 Carrying Parcel
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-amber-500 dark:text-amber-400 font-mono">
                     <Star className="w-3 h-3 fill-amber-500 dark:fill-amber-400" />

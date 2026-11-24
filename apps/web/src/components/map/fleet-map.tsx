@@ -85,13 +85,21 @@ export function FleetMap({
   const driverMarkersRef = useRef<Map<string, Marker>>(new Map());
   const requestMarkersRef = useRef<Map<string, { pickup: Marker; dropoff: Marker }>>(new Map());
 
-  // Automatically reveal driver popup when selected
+  // Automatically reveal driver popup and focus when selected
   useEffect(() => {
     if (!selectedDriverId) return;
-    const marker = driverMarkersRef.current.get(selectedDriverId);
-    if (marker && !marker.getPopup()?.isOpen()) {
-      marker.togglePopup();
-    }
+    driverMarkersRef.current.forEach((marker, id) => {
+      const popup = marker.getPopup();
+      if (id === selectedDriverId) {
+        if (popup && !popup.isOpen()) {
+          marker.togglePopup();
+        }
+      } else {
+        if (popup && popup.isOpen()) {
+          popup.remove();
+        }
+      }
+    });
   }, [selectedDriverId]);
 
   // Initialize MapLibre GL JS map instance
@@ -133,9 +141,9 @@ export function FleetMap({
     if (!mapRef.current || !flyToCoords) return;
     mapRef.current.flyTo({
       center: [flyToCoords.lng, flyToCoords.lat],
-      zoom: 14,
+      zoom: 15.5,
       essential: true,
-      duration: 1200,
+      duration: 1000,
     });
   }, [flyToCoords]);
 
@@ -150,6 +158,10 @@ export function FleetMap({
       activeDriverIds.add(driver.id);
       let marker = driverMarkersRef.current.get(driver.id);
       const displayName = getFormattedDriverName(driver.name, driver.id);
+      const isSelected = driver.id === selectedDriverId;
+      const activeReq = requests.find((r) => r.id === driver.activeRequestId);
+      const customerName = activeReq ? getCustomerName(activeReq.id) : undefined;
+      const hasActiveOrder = Boolean(driver.activeRequestId);
 
       if (!marker) {
         const el = createDriverMarkerElement(
@@ -157,9 +169,12 @@ export function FleetMap({
           driver.heading,
           displayName,
           driver.speed,
+          isSelected,
+          hasActiveOrder,
+          customerName,
         );
         const popup = new maplibregl.Popup({
-          offset: 18,
+          offset: 28,
           closeButton: true,
           closeOnClick: false,
           className: 'fleet-driver-popup',
@@ -179,7 +194,7 @@ export function FleetMap({
 
         driverMarkersRef.current.set(driver.id, marker);
       } else {
-        // Smoothly update location and orientation
+        // Smoothly update location, orientation, and selected state
         marker.setLngLat([driver.lng, driver.lat]);
         updateDriverMarkerElement(
           marker.getElement(),
@@ -187,12 +202,22 @@ export function FleetMap({
           driver.heading,
           displayName,
           driver.speed,
+          isSelected,
+          hasActiveOrder,
+          customerName,
         );
 
         const existingPopup = marker.getPopup();
         if (existingPopup) {
           existingPopup.setHTML(buildDriverPopupHtml(driver, displayName, requests));
         }
+      }
+
+      // Elevate zIndex for selected driver so it floats on top of all others
+      if (isSelected) {
+        marker.getElement().style.zIndex = '9999';
+      } else {
+        marker.getElement().style.zIndex = '1';
       }
     }
 
@@ -203,7 +228,7 @@ export function FleetMap({
         driverMarkersRef.current.delete(id);
       }
     });
-  }, [drivers, onSelectDriver]);
+  }, [drivers, selectedDriverId, requests, onSelectDriver]);
 
   // Sync Delivery Request Markers (Pickup & Dropoff pins)
   useEffect(() => {

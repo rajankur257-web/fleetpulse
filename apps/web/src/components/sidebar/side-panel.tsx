@@ -125,7 +125,13 @@ export function SidePanel({
           {/* Active Tab Body */}
           <div className="flex-1 overflow-hidden">
             {activeTab === 'requests' ? (
-              <RequestsQueue requests={requests} drivers={drivers} onFlyTo={onFlyTo} />
+              <RequestsQueue
+                requests={requests}
+                drivers={drivers}
+                onFlyTo={onFlyTo}
+                onSelectDriver={onSelectDriver}
+                selectedDriverId={selectedDriverId}
+              />
             ) : (
               <DriversList
                 drivers={drivers}

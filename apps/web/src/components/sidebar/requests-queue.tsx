@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Clock, Package, User } from 'lucide-react';
+import { ArrowRight, Clock, Navigation, Package, User } from 'lucide-react';
 import { DeliveryRequestData, DriverMarkerData } from '../../types/dashboard';
 import { REQUEST_STATUS_COLORS } from '../../lib/constants';
 import {
@@ -15,9 +15,17 @@ interface RequestsQueueProps {
   requests: DeliveryRequestData[];
   drivers?: DriverMarkerData[];
   onFlyTo: (coords: { lat: number; lng: number }) => void;
+  onSelectDriver?: (driver: DriverMarkerData | null) => void;
+  selectedDriverId?: string | null;
 }
 
-export function RequestsQueue({ requests, drivers = [], onFlyTo }: RequestsQueueProps) {
+export function RequestsQueue({
+  requests,
+  drivers = [],
+  onFlyTo,
+  onSelectDriver,
+  selectedDriverId,
+}: RequestsQueueProps) {
   const [filter, setFilter] = useState<'all' | 'pending' | 'active' | 'delivered'>('all');
 
   const driverMap = useMemo(() => {
@@ -113,11 +121,29 @@ export function RequestsQueue({ requests, drivers = [], onFlyTo }: RequestsQueue
                 : getFormattedDriverName(null, req.assignedDriverId);
             }
 
+            const isDriverSelected = Boolean(
+              req.assignedDriverId && req.assignedDriverId === selectedDriverId,
+            );
+
             return (
               <div
                 key={req.id}
-                onClick={() => onFlyTo({ lat: req.pickupLat, lng: req.pickupLng })}
-                className="p-3 rounded-lg bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:bg-slate-900/90 dark:border-slate-800/80 dark:hover:border-slate-700 dark:hover:bg-slate-800/70 cursor-pointer transition flex flex-col gap-2 text-xs shadow-sm"
+                onClick={() => {
+                  if (req.assignedDriverId) {
+                    const matched = driverMap.get(req.assignedDriverId);
+                    if (matched) {
+                      if (onSelectDriver) onSelectDriver(matched);
+                      onFlyTo({ lat: matched.lat, lng: matched.lng });
+                      return;
+                    }
+                  }
+                  onFlyTo({ lat: req.pickupLat, lng: req.pickupLng });
+                }}
+                className={`p-3 rounded-lg border transition flex flex-col gap-2 text-xs shadow-sm cursor-pointer ${
+                  isDriverSelected
+                    ? 'ring-2 ring-amber-400 bg-amber-50/50 border-amber-400 dark:bg-amber-950/20 dark:border-amber-500/60 shadow-md'
+                    : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:bg-slate-900/90 dark:border-slate-800/80 dark:hover:border-slate-700 dark:hover:bg-slate-800/70'
+                }`}
               >
                 {/* Header: Customer Name, Package Type & Status */}
                 <div className="flex items-start justify-between gap-2">
@@ -156,6 +182,25 @@ export function RequestsQueue({ requests, drivers = [], onFlyTo }: RequestsQueue
                   <span>Pick: {req.pickupLat.toFixed(3)}, {req.pickupLng.toFixed(3)}</span>
                   <span>Drop: {req.dropLat.toFixed(3)}, {req.dropLng.toFixed(3)}</span>
                 </div>
+
+                {/* Locate Driver Quick Action Button (if assigned) */}
+                {req.assignedDriverId && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const matched = driverMap.get(req.assignedDriverId!);
+                      if (matched) {
+                        if (onSelectDriver) onSelectDriver(matched);
+                        onFlyTo({ lat: matched.lat, lng: matched.lng });
+                      }
+                    }}
+                    className="w-full py-1.5 px-2.5 rounded-md bg-amber-100/70 hover:bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30 flex items-center justify-center gap-1.5 font-bold text-[11px] transition shadow-xs"
+                  >
+                    <Navigation className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>Locate Driver Holding Parcel ({assignedDriverDisplay})</span>
+                  </button>
+                )}
 
                 {/* Footer Metadata: Timestamp & Assigned Driver */}
                 <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100 dark:border-slate-800/60 font-mono">
