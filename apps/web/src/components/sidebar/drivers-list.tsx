@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Navigation, Phone, Search, Star, User } from 'lucide-react';
+import { ExternalLink, Navigation, Phone, Search, Share2, Star, User } from 'lucide-react';
 import { DeliveryRequestData, DriverMarkerData } from '../../types/dashboard';
 import { STATUS_COLORS } from '../../lib/constants';
 import {
@@ -28,6 +28,7 @@ export function DriversList({
 }: DriversListProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'busy' | 'offline'>('all');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const filteredDrivers = drivers.filter((d) => {
     const displayName = getFormattedDriverName(d.name, d.id);
@@ -151,18 +152,52 @@ export function DriversList({
                 </div>
 
                 {driver.activeRequestId && (
-                  <div className="text-[10px] text-amber-700 dark:text-amber-300 font-mono pt-1 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-1">
-                    <span className="font-sans font-medium truncate flex items-center gap-1">
-                      <User className="w-3 h-3 text-amber-500 shrink-0" />
-                      <span className="truncate">
-                        To: {getCustomerName(driver.activeRequestId)}
-                        {(() => {
-                          const matched = requests.find((r) => r.id === driver.activeRequestId);
-                          return matched ? ` (${getNeighborhoodName(matched.dropLat, matched.dropLng)})` : '';
-                        })()}
+                  <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-200 dark:border-slate-800">
+                    <div className="text-[10px] text-amber-700 dark:text-amber-300 font-mono flex items-center justify-between gap-1">
+                      <span className="font-sans font-medium truncate flex items-center gap-1">
+                        <User className="w-3 h-3 text-amber-500 shrink-0" />
+                        <span className="truncate">
+                          To: {getCustomerName(driver.activeRequestId)}
+                          {(() => {
+                            const matched = requests.find((r) => r.id === driver.activeRequestId);
+                            return matched ? ` (${getNeighborhoodName(matched.dropLat, matched.dropLng)})` : '';
+                          })()}
+                        </span>
                       </span>
-                    </span>
-                    <span className="shrink-0 text-slate-400 text-[9px]">#{driver.activeRequestId.slice(0, 6)}</span>
+                      <span className="shrink-0 text-slate-400 text-[9px]">#{driver.activeRequestId.slice(0, 6)}</span>
+                    </div>
+
+                    {/* Customer Tracking Actions */}
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                          const trackingUrl = `${origin}/track/${driver.activeRequestId}`;
+                          navigator.clipboard.writeText(trackingUrl);
+                          setCopiedId(driver.activeRequestId!);
+                          setTimeout(() => setCopiedId(null), 2500);
+                        }}
+                        className="flex-1 py-1 px-2 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold text-[10px] flex items-center justify-center gap-1.5 transition"
+                        title="Copy private tracking link for customer"
+                      >
+                        <Share2 className="w-3 h-3 text-amber-500" />
+                        <span>{copiedId === driver.activeRequestId ? '✓ Copied!' : 'Copy Customer Link'}</span>
+                      </button>
+
+                      <a
+                        href={`/track/${driver.activeRequestId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="py-1 px-2.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-semibold text-[10px] flex items-center gap-1 transition border border-slate-200 dark:border-slate-700"
+                        title="Open Customer Tracking Screen in New Tab"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>View</span>
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>

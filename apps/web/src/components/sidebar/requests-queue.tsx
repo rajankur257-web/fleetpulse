@@ -228,7 +228,7 @@ export function RequestsQueue({
                 </div>
 
                 {/* Customer Private Tracking Link Action */}
-                <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -239,11 +239,11 @@ export function RequestsQueue({
                       setCopiedId(req.id);
                       setTimeout(() => setCopiedId(null), 2500);
                     }}
-                    className="flex-1 py-1 px-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-semibold text-[10px] flex items-center justify-center gap-1.5 transition"
+                    className="flex-1 py-1.5 px-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30 font-bold text-[11px] flex items-center justify-center gap-1.5 transition shadow-xs"
                     title="Copy private tracking link for customer"
                   >
-                    <Share2 className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-                    <span>{copiedId === req.id ? '✓ Copied Link!' : 'Share Customer Link'}</span>
+                    <Share2 className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+                    <span>{copiedId === req.id ? '✓ Tracking Link Copied!' : '🔗 Customer Tracking Link'}</span>
                   </button>
 
                   <a
@@ -251,10 +251,10 @@ export function RequestsQueue({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="py-1 px-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 font-medium text-[10px] flex items-center gap-1 transition"
+                    className="py-1.5 px-3 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-semibold text-[11px] flex items-center gap-1 transition border border-slate-200 dark:border-slate-700"
                     title="Preview Customer Tracking Page"
                   >
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3.5 h-3.5" />
                     <span>View</span>
                   </a>
                 </div>

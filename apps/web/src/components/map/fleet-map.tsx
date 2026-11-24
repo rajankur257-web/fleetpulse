@@ -30,7 +30,18 @@ function buildDriverPopupHtml(
     const cust = getCustomerName(driver.activeRequestId);
     const matched = requests.find((r) => r.id === driver.activeRequestId);
     const dropArea = matched ? getNeighborhoodName(matched.dropLat, matched.dropLng) : area;
-    tripInfo = `<div class="text-amber-500 font-medium">Delivering to ${cust}</div><div class="text-slate-400 text-[10px]">Drop: ${dropArea} • #${driver.activeRequestId.slice(0, 6)}</div>`;
+    tripInfo = `
+      <div class="text-amber-500 font-bold">📦 Delivering to ${cust}</div>
+      <div class="text-slate-400 text-[10px] mb-2.5">Drop: ${dropArea} • #${driver.activeRequestId.slice(0, 6)}</div>
+      <a 
+        href="/track/${driver.activeRequestId}" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="flex items-center justify-center w-full py-1.5 px-2 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition text-center shadow-md no-underline"
+      >
+        🔗 Open Customer Tracking Screen ↗
+      </a>
+    `;
   }
 
   return `
