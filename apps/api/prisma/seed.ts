@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { PrismaClient, DriverStatus, RequestStatus, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
